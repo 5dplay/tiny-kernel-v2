@@ -1,6 +1,6 @@
 ARCH_DIR=arch/arm
 
-CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)
+CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include
 LDFLAGS += -r
 SUBDIRS += $(ARCH_DIR)
 KERNEL_LDFLAGS = -T $(ARCH_DIR)/kernel.ld

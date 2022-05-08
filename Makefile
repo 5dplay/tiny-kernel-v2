@@ -9,13 +9,14 @@ ROOT_DIR = $(shell pwd)
 MODULES =
 DEF_MODULES = kernel/kernel.o
 ARCH_DIR = 
-CFLAGS += -I$(ROOT_DIR)
+CFLAGS += -I$(ROOT_DIR)/include
 
 QEMU =
 QEMU_OPTS =
 
 ifeq ($(PRODUCT),)
-    PRODUCT = x86
+PRODUCT = x86
+export PRODUCT
 endif
 
 include $(PRODUCT).mk
