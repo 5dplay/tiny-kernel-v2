@@ -22,8 +22,10 @@
  * DEALINGS IN THE SOFTWARE.
  *
  */
+#include "memlayout.h"
+#include "page.h"
 
-#define MMIO_BASE       0x3F000000
+#define MMIO_BASE       phy_to_virt(MMIO_BASE_PHY)
 
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
 #define GPFSEL1         ((volatile unsigned int*)(MMIO_BASE+0x00200004))

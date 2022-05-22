@@ -2,9 +2,9 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x10000;
+    . = 0x80000000 + 0x10000;
 
-    .text BLOCK(4K) :
+    .text BLOCK(4K) : AT(0x10000)
     {
         *(.text.boot)
         *(.text)
