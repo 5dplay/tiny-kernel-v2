@@ -4,10 +4,10 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
 CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -Werror
 LDFLAGS =
-SUBDIRS = kernel
+SUBDIRS = kernel mm
 ROOT_DIR = $(shell pwd)
 MODULES =
-DEF_MODULES = kernel/kernel.o
+DEF_MODULES = kernel/kernel.o mm/mm.o
 ARCH_DIR = 
 CFLAGS += -I$(ROOT_DIR)/include
 

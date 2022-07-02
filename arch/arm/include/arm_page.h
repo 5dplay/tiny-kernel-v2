@@ -1,7 +1,5 @@
-#ifndef __TINY_KERNEL_PAGE_H__
-#define __TINY_KERNEL_PAGE_H__
-
-
+#ifndef __TINY_KERNEL_ARM_PAGE_H__
+#define __TINY_KERNEL_ARM_PAGE_H__
 
 //1MB section mode during boot stage
 #define SECTION_SIZE 0x100000

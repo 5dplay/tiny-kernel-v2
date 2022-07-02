@@ -1,10 +1,7 @@
-#ifndef __TINY_KERNEL_PAGE_H__
-#define __TINY_KERNEL_PAGE_H__
+#ifndef __TINY_KERNEL_X86_PAGE_H__
+#define __TINY_KERNEL_X86_PAGE_H__
 
-#define PAGE_SIZE 0x1000
-#define PAGE_MASK (~(PAGE_SIZE-1))
-#define PAGE_ALIGN_CEIL(addr) (((addr)+PAGE_SIZE-1)&PAGE_MASK)
-#define PAGE_ALIGN_FLOOR(addr) ((addr)&PAGE_MASK)
+#include "page.h"
 
 #define PDE_SHIFT 22
 #define PDE_IDX(addr) (((addr)>>PDE_SHIFT)&0x3FF)

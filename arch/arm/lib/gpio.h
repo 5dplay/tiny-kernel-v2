@@ -24,6 +24,7 @@
  */
 #include "memlayout.h"
 #include "page.h"
+#include "arm_page.h"
 
 #define MMIO_BASE       phy_to_virt(MMIO_BASE_PHY)
 

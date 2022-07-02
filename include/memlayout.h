@@ -13,4 +13,10 @@
 #define virt_to_phy(addr) (addr-KERNEL_BASE)
 
 #define BOOT_KERNEL_STACK_SIZE 0x8000
+
+#ifndef __ASSEMBLER__
+//最后链接时候填充内核占用的结尾地址
+extern char tiny_kernel_end[];
+#endif /* !__ASSEMBLER__ */
+
 #endif

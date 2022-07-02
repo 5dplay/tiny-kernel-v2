@@ -30,5 +30,7 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
+
+    PROVIDE(tiny_kernel_end = .);
 }
 

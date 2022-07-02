@@ -1,5 +1,5 @@
 #include "memlayout.h"
-#include "page.h"
+#include "arm_page.h"
 
 .section ".text.boot"
 

@@ -53,4 +53,4 @@ dkms.conf
 
 *.asm
 image
-
+compile_flags.txt
