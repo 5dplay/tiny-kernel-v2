@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "memlayout.h"
+#include "string.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -32,6 +33,7 @@ static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
     return (uint16_t) uc | (uint16_t) color << 8;
 }
 
+#if 0
 size_t strlen(const char* str)
 {
     size_t len = 0;
@@ -41,6 +43,7 @@ size_t strlen(const char* str)
 
     return len;
 }
+#endif
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;

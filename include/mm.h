@@ -56,4 +56,26 @@ void *bootm_alloc();
 */
 void bootm_free(void *addr);
 
+/**
+* @brief 分配一个页大小的内存
+*
+* @return NULL => 分配失败， != NULL => 分配成功
+*/
+void *page_alloc();
+
+/**
+* @brief 释放内存
+*
+* @param [in]addr 目标起始地址，必须为页对齐的内存地址
+*/
+void page_free(void *addr);
+
+/**
+* @brief 内存管理初始化，包括虚拟内存地址映射相关
+*
+* @return TK_STATUS
+*/
+TK_STATUS mm_init();
+
+extern int g_mm_initialized;
 #endif

@@ -77,3 +77,15 @@ void page_allocator_free(page_allocator_head *page_list, void *addr)
     list_add(&page_desc->node, &page_list->head);
     page_list->page_cnt++;
 }
+
+void *page_alloc()
+{
+    /*FIXME: 暂时使用bootm的，之后考虑怎么单独分配page*/
+    return bootm_alloc();
+}
+
+void page_free(void *addr)
+{
+    /*FIXME: 暂时使用bootm的，之后考虑怎么单独分配page*/
+    bootm_free(addr);
+}

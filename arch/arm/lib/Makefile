@@ -6,7 +6,7 @@ ifeq ($(CONFIG_EARLY_PRINT), y)
 OBJS += early_print.o
 endif
 
-all: arm_lib.o
+all: arm_lib.ko
 
-arm_lib.o: $(OBJS)
+arm_lib.ko: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)

@@ -1,8 +1,8 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=page_alloc.o bootm_alloc.o
+OBJS=page_alloc.o bootm_alloc.o mm.o
 
-all: mm.o
+all: mm.ko
 
-mm.o: $(OBJS)
+mm.ko: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)

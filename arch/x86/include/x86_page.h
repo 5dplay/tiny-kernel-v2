@@ -18,4 +18,35 @@
 
 #define PAGING_BIT_P 0x1
 
+
+#ifndef __ASSEMBLER__
+#include "type.h"
+
+struct x86_vmm;
+/**
+* @brief x86页虚拟地址映射
+*
+* @param this x86内存管理器
+* @param pg_dir 页目录
+* @param vaddr 起始虚拟地址
+* @param paddr 对应映射的起始物理地址
+* @param size 内存块大小，单位——字节
+* @param flags 权限
+*
+* @return TK_STATUS
+*/
+TK_STATUS x86_page_map(struct x86_vmm *this, uaddr pg_dir, uaddr vaddr, uaddr paddr, uint size, uint flags);
+
+/**
+* @brief 释放页目录占用的所有空间
+*
+* @param this x86内存管理器
+* @param pg_dir 页目录
+*
+* @return
+*/
+TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir);
+
+#endif /* __ASSEMBLER__ */
+
 #endif

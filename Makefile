@@ -7,7 +7,7 @@ LDFLAGS =
 SUBDIRS = kernel mm
 ROOT_DIR = $(shell pwd)
 MODULES =
-DEF_MODULES = kernel/kernel.o mm/mm.o
+DEF_MODULES = kernel/kernel.ko mm/mm.ko
 ARCH_DIR = 
 CFLAGS += -I$(ROOT_DIR)/include
 

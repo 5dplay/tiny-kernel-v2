@@ -45,7 +45,7 @@ void panic(const char *fmt, ...);
 #else
 static inline void panic(const char *fmt, ...)
 {
-
+    while (1);
 }
 #endif
 
