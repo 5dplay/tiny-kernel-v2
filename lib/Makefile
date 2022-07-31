@@ -1,8 +1,8 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=page_alloc.o mm.o
+OBJS=math.o
 
-all: mm.ko
+all: lib.ko
 
-mm.ko: $(OBJS)
+lib.ko: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)

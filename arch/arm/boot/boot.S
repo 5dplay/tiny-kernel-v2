@@ -57,9 +57,8 @@ mmu_stage3:
     mcr p15, 0, r2, c8, c7, 0
     mcr p15, 0, r2, c7, c10, 4
 
-    /*设置Domains*/
-    mvn r2, #0
-    bic r2, #0xc
+    /*设置Domains，全设置为client模式，页表项flags使用domain 0即可*/
+    mvn r2, #0x55555555
     mcr p15, 0, r2, c3, c0, 0
 
     /*设置TTBR*/
@@ -109,7 +108,7 @@ boot_kernel_stack_top:
 
 .org 0x4000
 
-/*页目录必须按16KB对齐*/
+/*页目录必须按16KB对齐，见 <ARM Cortex -A Series Version: 4.0 Programmer’s Guide> 第9.4小节 */
 
 boot_page_dir:
     .fill 0x1000, 0x4, 0x0

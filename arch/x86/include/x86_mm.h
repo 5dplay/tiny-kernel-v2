@@ -5,9 +5,9 @@
 #include "x86_seg.h"
 
 struct x86_vmm {
-    struct seg_desc m_seg[SEG_MAX];
-    struct gdtr m_gdtr;
-    struct task_state m_ts;
+    struct seg_desc m_seg[SEG_MAX];     /* 段描述符 */
+    struct gdtr m_gdtr;                 /* 全局描述符表 */
+    struct task_state m_ts;             /* tss */
 };
 
 #endif

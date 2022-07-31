@@ -40,7 +40,7 @@ static u32* s_get_pg_pte(u32 *pg_dir, uaddr vaddr, int create)
         if (!create)
             return NULL;
 
-        pg_tbl = g_mm_initialized ? page_alloc() : bootm_alloc();
+        pg_tbl = page_alloc();
 
         if (NULL == pg_tbl) {
             printk("failed to alloc page table!\n");
@@ -116,10 +116,7 @@ int __x86_vm_resize_dec(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint ne
         } else if (*pte_val & PAGING_BIT_P) {
             mem = PTE_ADDR(*pte_val);
 
-            if (g_mm_initialized)
-                page_free((void *)phy_to_virt(mem));
-            else
-                bootm_free((void *)phy_to_virt(mem));
+            page_free((void *)phy_to_virt(mem));
 
             *pte_val = 0;
         }
@@ -172,17 +169,11 @@ TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir)
 
     for (i = 0; i < NPDENTRIES; i++) {
         if (pde[i] & PAGING_BIT_P) {
-            if (g_mm_initialized)
-                page_free((void *)phy_to_virt(PDE_ADDR(pde[i])));
-            else
-                bootm_free((void *)phy_to_virt(PDE_ADDR(pde[i])));
+            page_free((void *)phy_to_virt(PDE_ADDR(pde[i])));
         }
     }
 
-    if (g_mm_initialized)
-        page_free(pde);
-    else
-        bootm_free(pde);
+    page_free(pde);
 
     return TK_STATUS_SUCCESS;
 }

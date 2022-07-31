@@ -2,109 +2,53 @@
 #include <stdint.h>
 #include "memlayout.h"
 #include "string.h"
+#include "x86_asm.h"
 
-/* Hardware text mode color constants. */
-enum vga_color {
-    VGA_COLOR_BLACK = 0,
-    VGA_COLOR_BLUE = 1,
-    VGA_COLOR_GREEN = 2,
-    VGA_COLOR_CYAN = 3,
-    VGA_COLOR_RED = 4,
-    VGA_COLOR_MAGENTA = 5,
-    VGA_COLOR_BROWN = 6,
-    VGA_COLOR_LIGHT_GREY = 7,
-    VGA_COLOR_DARK_GREY = 8,
-    VGA_COLOR_LIGHT_BLUE = 9,
-    VGA_COLOR_LIGHT_GREEN = 10,
-    VGA_COLOR_LIGHT_CYAN = 11,
-    VGA_COLOR_LIGHT_RED = 12,
-    VGA_COLOR_LIGHT_MAGENTA = 13,
-    VGA_COLOR_LIGHT_BROWN = 14,
-    VGA_COLOR_WHITE = 15,
-};
+#define CRTPORT 0x3D4
+#define BACKSPACE 0x100
+#define VGA_BUFFER phy_to_virt(0xB8000)
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
+static uint16_t *crt = (uint16_t *)VGA_BUFFER;
+
+void vgaputc(int c)
 {
-    return fg | bg << 4;
-}
+    int pos;
 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
-{
-    return (uint16_t) uc | (uint16_t) color << 8;
-}
+    // Cursor position: col + 80*row.
+    outb(CRTPORT, 14);
+    pos = inb(CRTPORT + 1) << 8;
+    outb(CRTPORT, 15);
+    pos |= inb(CRTPORT + 1);
 
-#if 0
-size_t strlen(const char* str)
-{
-    size_t len = 0;
+    if (c == '\n')
+        pos += 80 - pos % 80;
+    else if (c == BACKSPACE) {
+        if (pos > 0) --pos;
+    } else
+        crt[pos++] = (c & 0xff) | 0x0700; // black on white
 
-    while (str[len])
-        len++;
-
-    return len;
-}
-#endif
-
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
-
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
-
-void terminal_initialize(void)
-{
-    terminal_row = 0;
-    terminal_column = 0;
-    terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-    terminal_buffer = (uint16_t*) phy_to_virt(0xB8000);
-
-    for (size_t y = 0; y < VGA_HEIGHT; y++) {
-        for (size_t x = 0; x < VGA_WIDTH; x++) {
-            const size_t index = y * VGA_WIDTH + x;
-            terminal_buffer[index] = vga_entry(' ', terminal_color);
-        }
-    }
-}
-
-void terminal_setcolor(uint8_t color)
-{
-    terminal_color = color;
-}
-
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
-{
-    const size_t index = y * VGA_WIDTH + x;
-    terminal_buffer[index] = vga_entry(c, color);
-}
-
-void terminal_putchar(char c)
-{
-    terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-
-    if (++terminal_column == VGA_WIDTH) {
-        terminal_column = 0;
-
-        if (++terminal_row == VGA_HEIGHT)
-            terminal_row = 0;
-    }
-}
-
-void terminal_write(const char* data, size_t size)
-{
-    for (size_t i = 0; i < size; i++)
-        terminal_putchar(data[i]);
-}
-
-void early_print(const char* data)
-{
-    static int first = 1;
-
-    if (first) {
-        terminal_initialize();
-        first = 0;
+    if (pos < 0 || pos > 25 * 80) {
+        //echo "pos under/overflow"
+        return ;
     }
 
-    terminal_write(data, strlen(data));
+    if ((pos / 80) >= 24) { // Scroll up.
+        memcpy(crt, crt + 80, sizeof(crt[0]) * 23 * 80);
+        pos -= 80;
+        memset(crt + pos, 0, sizeof(crt[0]) * (24 * 80 - pos));
+    }
+
+    outb(CRTPORT, 14);
+    outb(CRTPORT + 1, pos >> 8);
+    outb(CRTPORT, 15);
+    outb(CRTPORT + 1, pos);
+    crt[pos] = ' ' | 0x0700;
+}
+
+void early_print(const char *msg)
+{
+    int c;
+
+    while ((c = *msg++) != '\0')
+        vgaputc(c);
 }

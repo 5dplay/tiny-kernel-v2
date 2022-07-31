@@ -4,10 +4,10 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
 CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -Werror
 LDFLAGS =
-SUBDIRS = kernel mm
+SUBDIRS = kernel mm lib
 ROOT_DIR = $(shell pwd)
 MODULES =
-DEF_MODULES = kernel/kernel.ko mm/mm.ko
+DEF_MODULES = kernel/kernel.ko mm/mm.ko lib/lib.ko
 ARCH_DIR = 
 CFLAGS += -I$(ROOT_DIR)/include
 
@@ -43,6 +43,7 @@ astyle:
 
 clean:
 	find . -name "*.o" | xargs rm -rf
+	find . -name "*.ko" | xargs rm -rf
 	find . -name "*.asm" | xargs rm -rf
 	find . -name "*.orig" | xargs rm -rf
 	rm -f image image.elf image.asm

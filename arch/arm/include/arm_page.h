@@ -35,7 +35,7 @@ APX/AP: Access Permission bit => 在启动阶段设置为Full Access，即0b011
 TEX/C/B: Memory type and cacheable properties => 在启动阶段设置为Normal memory type，即0b 001 0 0
 S: Shareable
 XN: Execute Never bit => 防止该内存出现执行操作，这里设置为0
-Domain: 在armv7被废除的标记位，应当设置为全0，并且将DACR的所有位为0
+Domain: 在armv7被废除的标记位，应当设置为全0，并且将DACR的所有位为Client模式
 nG: Not-Global flag => 在启动解决设置为全局的，即为0
 
 已经固定一下的有：SBZ = 0, nG = 0, S = 0, APX = 0, TEX = 000, AP = 11, P = 1, Domain = 0000, XN = 0,
