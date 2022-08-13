@@ -47,7 +47,7 @@ mmu_stage1:
 /*额外映射MMIO_BASE+PHY_2M的地址处*/
     ldr r0, LC4
     ldr r1, LC5
-mmu_stager2:
+mmu_stage2:
     str r1, [r0], #4
     add r1, #SECTION_SIZE
 
@@ -58,7 +58,7 @@ mmu_stage3:
     mcr p15, 0, r2, c7, c10, 4
 
     /*设置Domains，全设置为client模式，页表项flags使用domain 0即可*/
-    mvn r2, #0x55555555
+    mov r2, #0x55
     mcr p15, 0, r2, c3, c0, 0
 
     /*设置TTBR*/

@@ -1,8 +1,8 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=arm_mmu.o
+OBJS=arm_mmu.o arm_page.o
 
 all: arm_mm.ko
 
-x86_mm.ko: $(OBJS)
+arm_mm.ko: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)

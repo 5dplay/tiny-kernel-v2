@@ -1,6 +1,6 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=uart.o
+OBJS=uart.o lib.o
 
 ifeq ($(CONFIG_EARLY_PRINT), y)
 OBJS += early_print.o

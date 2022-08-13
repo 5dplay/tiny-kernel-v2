@@ -1,4 +1,4 @@
-SUBDIRS = boot lib
+SUBDIRS = boot lib mm
 
 all: $(patsubst %, _dir_%, $(SUBDIRS))
 

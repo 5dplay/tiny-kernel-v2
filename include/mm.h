@@ -59,6 +59,13 @@ void page_allocator_free(page_allocator_head *page_list, void *addr, uint order)
 */
 TK_STATUS bootm_init();
 
+/**
+* @brief 虚拟地址映射完毕时内存分配器初始化
+*
+* @return 成功 => TK_STATUS_SUCCESS，失败 => 见具体错误码
+*/
+TK_STATUS page_init();
+
 /* bootm init 之后直接就可以使用page_alloc分配内存，
    不需要额外区分bootm和page内存的内存分配，故屏蔽这一段代码。*/
 #if 0
@@ -117,8 +124,10 @@ void *page_alloc_v2(uint order);
 */
 void page_free(void *addr);
 
-/* only for debug page */
-void page_dump();
+/* only for debug page
+ * 0 for bootm, 1 for page
+ */
+void page_dump(int type);
 
 /**
 * @brief 释放内存

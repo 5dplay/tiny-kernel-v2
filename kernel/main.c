@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memlayout.h"
 #include "type.h"
 #include "mm.h"
 #include "string.h"
@@ -28,7 +29,16 @@ void kernel_main()
 
     g_mm_initialized = 1;
 
+    ret = page_init();
 
+    if (TK_STATUS_IS_OK(ret))
+        printk("success to init page!\n");
+    else {
+        printk("failed to init page!\n");
+        goto failed;
+    }
+
+    /*至此，不适用bootm分配的内存了，原先已用掉的就放着吧，也先不处理了*/
 failed:
 
     while (1);

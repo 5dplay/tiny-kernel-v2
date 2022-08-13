@@ -2,7 +2,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
-CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -Werror
+CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall
 LDFLAGS =
 SUBDIRS = kernel mm lib
 ROOT_DIR = $(shell pwd)
@@ -37,6 +37,12 @@ image: subdirs
 
 qemu: image
 	$(QEMU) $(QEMU_OPTS)
+
+qemu_debug: image
+	$(QEMU) $(QEMU_OPTS) -S -s
+
+qemu_gdb: image.elf
+	gdb-multiarch image.elf --ex="target remote localhost:1234"
 
 astyle:
 	astyle --style=linux --recursive -s4 -S -H -p -U -f *.c *.h

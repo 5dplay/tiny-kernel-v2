@@ -6,33 +6,58 @@
 #include "string.h"
 
 /* 统一bootm和page */
-page_allocator_head g_tk_pages;
+page_allocator_head s_bootm_pages;
+page_allocator_head s_tk_pages;
+static int page_inited = 0;
 
 TK_STATUS bootm_init()
 {
-    return page_allocator_init(&g_tk_pages,
+    return page_allocator_init(&s_bootm_pages,
                                (uaddr)tiny_kernel_end,
                                phy_to_virt(PHY_8M), KERNEL_BASE);
+}
+TK_STATUS page_init()
+{
+    TK_STATUS ret = page_allocator_init(&s_tk_pages,
+                                        phy_to_virt(PHY_8M),
+                                        phy_to_virt(PHY_TOP), KERNEL_BASE);
+
+    if (TK_STATUS_IS_OK(ret))
+        page_inited = 1;
+
+    return ret;
 }
 
 void *page_alloc()
 {
-    return page_allocator_alloc(&g_tk_pages, 0);
+    if (!page_inited)
+        return page_allocator_alloc(&s_bootm_pages, 0);
+    else
+        return page_allocator_alloc(&s_tk_pages, 0);
 }
 
 void *page_alloc_v2(uint order)
 {
-    return page_allocator_alloc(&g_tk_pages, order);
+    if (!page_inited)
+        return page_allocator_alloc(&s_bootm_pages, order);
+    else
+        return page_allocator_alloc(&s_tk_pages, order);
 }
 
 void page_free(void *addr)
 {
-    page_allocator_free(&g_tk_pages, addr, 0);
+    if (!page_inited)
+        page_allocator_free(&s_bootm_pages, addr, 0);
+    else
+        page_allocator_free(&s_tk_pages, addr, 0);
 }
 
 void page_free_v2(void *addr, uint order)
 {
-    page_allocator_free(&g_tk_pages, addr, order);
+    if (!page_inited)
+        page_allocator_free(&s_bootm_pages, addr, order);
+    else
+        page_allocator_free(&s_tk_pages, addr, order);
 }
 
 /*
@@ -217,12 +242,15 @@ static void __page_allocator_init(page_allocator_head *page_list)
 
 }
 
-void page_dump()
+void page_dump(int type)
 {
     int i, j;
     page_allocator_head *page_list;
 
-    page_list = &g_tk_pages;
+    if (type == 0)
+        page_list = &s_bootm_pages;
+    else
+        page_list = &s_tk_pages;
 
     for (j = 0; j < MAX_ORDER; j++) {
         printk("order %d: ", j);

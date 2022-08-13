@@ -1,7 +1,11 @@
 #include "common.h"
+#include "memlayout.h"
 #include "mm.h"
+#include "type.h"
 #include "vm.h"
+#include "arm_asm.h"
 #include "arm_mm.h"
+#include "arm_page.h"
 
 struct arm_vmm g_vm;
 
@@ -15,8 +19,8 @@ uaddr vm_alloc_pg_dir(vmm *vm)
 {
     uaddr pg_dir;
 
-    #define TTBR0_ALIGN_SIZE 0x4000
-    pg_dir = (uaddr)page_align_alloc(TTBR0_ALIGN_SIZE);
+    /* arm32 页目录需要16k，并且必须是按照16k对齐的 */
+    pg_dir = (uaddr)page_alloc_v2(2);
 
     return pg_dir;
 }
@@ -30,16 +34,30 @@ TK_STATUS vm_map(vmm *vm, uaddr pg_dir, uaddr v_addr, uaddr p_addr,
                  uint size, uint perm_flags)
 {
     struct arm_vmm *this;
-    uint x86_perm_flags;
+    struct page_map_info info;
+    uint arm_perm_flags;
 
-    x86_perm_flags = 0;
+    arm_perm_flags = 0;
     this = (struct arm_vmm *)vm;
 
     if (perm_flags & VM_PERM_USER)
-        x86_perm_flags |= 0x4;
+        arm_perm_flags |= 0x20;
+    else
+        arm_perm_flags |= 0x10;
 
-    if (perm_flags & VM_PERM_WRITE)
-        x86_perm_flags |= 0x2;
+    if (!(perm_flags & VM_PERM_WRITE))
+        arm_perm_flags |= 0x100;
 
-    return arm_page_map(this, pg_dir, v_addr, p_addr, size, x86_perm_flags);
+    info.pg_dir = pg_dir;
+    info.vaddr = v_addr;
+    info.paddr = p_addr;
+    info.size = size;
+    info.flags = arm_perm_flags;
+    return arm_page_map(this, &info);
+}
+
+void vm_reload(vmm *vm, uaddr pg_dir)
+{
+    mcr_ttbr0(virt_to_phy(pg_dir));
+    return ;
 }
