@@ -1,4 +1,4 @@
-SUBDIRS = boot lib mm
+SUBDIRS = boot lib mm kernel
 
 all: $(patsubst %, _dir_%, $(SUBDIRS))
 

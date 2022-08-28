@@ -5,6 +5,8 @@
 #include "memlayout.h"
 
 int g_mm_initialized = 0;
+uaddr kernel_pg_dir;
+vmm *vm;
 
 struct mmap_desc {
     uaddr virt;
@@ -25,13 +27,13 @@ static struct mmap_desc kmmap[] = {
 #define kmmap_size (sizeof(kmmap)/sizeof(kmmap[0]))
 
 //FIXME: 这两个在完成重构后升级成全局函数
-TK_STATUS kernel_map_init(vmm *vm, uaddr pg_dir)
+TK_STATUS kernel_map_init(vmm *p_vm, uaddr pg_dir)
 {
     int i;
 
     //初始化kernel部分虚拟内存映射
     for (i = 0; i < kmmap_size; i++) {
-        vm_map(vm, pg_dir, kmmap[i].virt, kmmap[i].phys_start,
+        vm_map(p_vm, pg_dir, kmmap[i].virt, kmmap[i].phys_start,
                kmmap[i].phys_end - kmmap[i].phys_start, kmmap[i].flags);
     }
 
@@ -41,8 +43,6 @@ TK_STATUS kernel_map_init(vmm *vm, uaddr pg_dir)
 TK_STATUS mm_init()
 {
     TK_STATUS ret;
-    vmm *vm;
-    uaddr kernel_pg_dir;
 
     ret = TK_STATUS_FAILURE;
     kernel_pg_dir = 0;
@@ -74,3 +74,12 @@ TK_STATUS mm_init()
     return TK_STATUS_SUCCESS;
 }
 
+TK_STATUS kmap(uaddr v_addr, uaddr p_addr, uint size, uint perm_flags)
+{
+    return vm_map(vm, kernel_pg_dir, v_addr, p_addr, size, perm_flags);
+}
+
+void kreload()
+{
+    vm_reload(vm, kernel_pg_dir);
+}

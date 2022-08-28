@@ -7,6 +7,7 @@ SECTIONS
     .text BLOCK(4K) : AT(0x10000)
     {
         *(.text.boot)
+        *(.text.vector)
         *(.text)
     }
 

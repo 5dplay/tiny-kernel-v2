@@ -82,4 +82,7 @@ void vm_reload(vmm *vm, uaddr pg_dir);
 */
 vmm *arch_mmu_init();
 
+TK_STATUS kmap(uaddr v_addr, uaddr p_addr, uint size, uint perm_flags);
+void kreload();
+
 #endif
