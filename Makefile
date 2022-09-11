@@ -2,12 +2,12 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
-CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall
+CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -g
 LDFLAGS =
-SUBDIRS = kernel mm lib
+SUBDIRS = kernel mm lib driver
 ROOT_DIR = $(shell pwd)
 MODULES =
-DEF_MODULES = kernel/kernel.ko mm/mm.ko lib/lib.ko
+DEF_MODULES = kernel/kernel.ko mm/mm.ko lib/lib.ko driver/drv.ko
 ARCH_DIR = 
 CFLAGS += -I$(ROOT_DIR)/include
 

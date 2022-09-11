@@ -16,7 +16,17 @@ ifeq ($(CONFIG_BOARD_RASPI2), y)
 CFLAGS += -DBOARD_RASPI2
 endif
 
+ifeq ($(CONFIG_KEYBOARD), y)
+CFLAGS += -DHAS_KEYBOARD
+endif
+
+ifeq ($(CONFIG_NO_DRV), y)
+CFLAGS += -DNO_DRV
+endif
+
 %.o:%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 %.o:%.S
 	$(CC) $(CFLAGS) -c $< -o $@
+
+drv-dir-y :=

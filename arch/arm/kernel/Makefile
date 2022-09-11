@@ -1,6 +1,6 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=arm_trap.o arm_vector.o
+OBJS=arm_trap.o arm_vector.o arm_drv.o
 
 all: arm_kernel.ko
 

@@ -38,14 +38,34 @@ __trap_stack_top: .word trap_stack_top
 
 .macro save_user_regs
     sub sp, #S_FRAME_SIZE
-    stmia sp, {r0 - r12}
+    stmia sp, {r0 - r12}                @ store multi reg to [Rn]
     ldr r2, __trap_stack_top
-    ldmia r2, {r2 - r3}
+    ldmia r2, {r2 - r3}                 @ load multi reg from [Rn]
     add r0, sp, #S_FRAME_SIZE
     add r5, sp, #S_SP
     mov r1, lr
     stmia r5, {r0 - r3}                 @ save sp_SVC, lr_SVC, pc, cpsr
     mov r0, sp
+.endm
+
+.macro irq_save_user_regs
+    sub sp, #S_FRAME_SIZE
+    stmia sp, {r0 - r12}
+    add r8, sp, #S_PC
+    stmdb r8, {sp, lr}^
+    str lr, [r8, #0]
+    mrs r6, spsr
+    str r6, [r8, #4]
+    str r6, [r8, #8]
+    mov r0, sp
+.endm
+
+.macro irq_restore_user_regs
+    ldmia sp, {r0 - lr}^
+    mov r0, r10
+    ldr lr, [sp, #S_PC]
+    add sp, #S_FRAME_SIZE
+    subs pc, lr, #4
 .endm
 
 __trap_reset:
@@ -69,9 +89,13 @@ __trap_not_used:
     bl do_trap_not_used
 
 __trap_irq:
+    ldr r13, __trap_stack_top           @ r13 == sp
+    irq_save_user_regs
     bl do_irq
+    irq_restore_user_regs
 
 __trap_fiq:
+    ldr r13, __trap_stack_top           @ r13 == sp
     bl do_fiq
 
 arm_vector_end:

@@ -4,6 +4,7 @@
 #include "mm.h"
 #include "string.h"
 #include "trap.h"
+#include "drv.h"
 
 void kernel_main()
 {
@@ -41,11 +42,14 @@ void kernel_main()
 
     /*至此，不适用bootm分配的内存了，原先已用掉的就放着吧，也先不处理了*/
     trap_init();
-    {
-        char *wild_ptr = (char *)PHY_8M;
-        printk("try to access [%x]\n", &wild_ptr[22]);
-        wild_ptr[22] = 'C';
-    }
+
+    irq_init();
+
+    enable_trap();
+
+    drv_init();
+
+    printk("reach here\n");
 failed:
 
     while (1);

@@ -38,6 +38,9 @@
 #define IRQ_KBD          1
 #define IRQ_COM1         4
 #define IRQ_IDE         14
+
+//若是级联8259A，则最多支持15个中断请求
+#define IRQ_MAX         15
 #define IRQ_IDE1        15
 #define IRQ_ERROR       19
 

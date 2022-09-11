@@ -24,6 +24,10 @@
  */
 
 #include "arm_iomap.h"
+#include "trap.h"
+#include "arm_trap.h"
+#include "common.h"
+#include "mini_uart.h"
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -39,20 +43,39 @@
 #define AUX_MU_STAT     ((volatile unsigned int*)(MMIO_BASE+0x00215064))
 #define AUX_MU_BAUD     ((volatile unsigned int*)(MMIO_BASE+0x00215068))
 
+#define AUX_MU_IIR_TX(val) ((val) & 0x2)
+#define AUX_MU_IIR_RX(val) ((val) & 0x4)
+
+/* also see https://github.com/futurehomeno/RPI_mini_UART.git */
+
+
+void mini_uart_trap_handler(struct trap_frame *tf)
+{
+    u32 irq_status;
+
+    irq_status = *AUX_MU_IIR;
+
+    /* only care abot rx */
+    if (!AUX_MU_IIR_RX(irq_status))
+        return ;
+
+    mini_uart_getc();
+}
+
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
  */
-void uart_init()
+void mini_uart_init()
 {
     register unsigned int r;
 
     /* initialize UART */
-    *AUX_ENABLE |= 1;      // enable UART1, AUX mini uart
+    *AUX_ENABLE |= 1;      // enable UART1, AUX mini mini_uart
     *AUX_MU_CNTL = 0;
     *AUX_MU_LCR = 3;       // 8 bits
     *AUX_MU_MCR = 0;
-    *AUX_MU_IER = 0;
-    *AUX_MU_IIR = 0xc6;    // disable interrupts
+    *AUX_MU_IER = 0xD;     // only care about rx interrupt
+    *AUX_MU_IIR = 0xC6;    // flush fifo
     *AUX_MU_BAUD = 270;    // 115200 baud
     /* map UART1 to GPIO pins */
     r = *GPFSEL1;
@@ -75,12 +98,15 @@ void uart_init()
 
     *GPPUDCLK0 = 0;        // flush GPIO setup
     *AUX_MU_CNTL = 3;      // enable Tx, Rx
+
+    irq_register(IRQ_AUX, mini_uart_trap_handler);
+    irq_enable(IRQ_AUX);
 }
 
 /**
  * Send a character
  */
-void uart_send(unsigned int c)
+void mini_uart_send(unsigned int c)
 {
     /* wait until we can send */
     do {
@@ -94,32 +120,56 @@ void uart_send(unsigned int c)
 /**
  * Receive a character
  */
-char uart_getc()
+#define AUX_MU_STAT_HAS_RX(val) ((val) & 0xF0000)
+#define AUX_RX_BUF_SIZE 8
+void mini_uart_getc()
 {
-    char r;
+    char buf[AUX_RX_BUF_SIZE + 1];
+    u32 i, val;
 
-    /* wait until something is in the buffer */
+    buf[AUX_RX_BUF_SIZE] = '\0';
+    i = 0;
+
     do {
-        asm volatile("nop");
-    } while (!(*AUX_MU_LSR & 0x01));
+        val = *AUX_MU_STAT;
 
-    /* read it and return */
-    r = (char)(*AUX_MU_IO);
-    /* convert carrige return to newline */
-    return r == '\r' ? '\n' : r;
+        if (!AUX_MU_STAT_HAS_RX(val))
+            break;
+
+        buf[i++] = (char)(*AUX_MU_IO);
+    } while (i < AUX_RX_BUF_SIZE);
+
+    for (val = 0; val < i; val++) {
+        switch (buf[val]) {
+            case '\x7f':
+                mini_uart_send(0x8);
+                mini_uart_send(' ');
+                mini_uart_send(0x8);
+                break;
+
+            case '\r':
+                mini_uart_send('\r');
+                mini_uart_send('\n');
+                break;
+
+            /* TODO: 仍存在别的控制字符未处理 */
+            default:
+                mini_uart_send(buf[val]);
+        }
+    }
 }
 
 /**
  * Display a string
  */
-void uart_puts(const char *s)
+void mini_uart_puts(const char *s)
 {
     while (*s) {
         /* convert newline to carrige return + newline */
         if (*s == '\n')
-            uart_send('\r');
+            mini_uart_send('\r');
 
-        uart_send(*s++);
+        mini_uart_send(*s++);
     }
 }
 

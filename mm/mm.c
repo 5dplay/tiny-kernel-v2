@@ -21,7 +21,7 @@ static struct mmap_desc kmmap[] = {
     {KERNEL_BASE + PHY_8M, PHY_8M, PHY_TOP, VM_PERM_WRITE}, /*可读可写*/
 #ifdef BOARD_RASPI2
 #define MMIO_BASE_PHY 0x3F000000
-    {KERNEL_BASE + MMIO_BASE_PHY + PHY_2M, MMIO_BASE_PHY + PHY_2M, MMIO_BASE_PHY + PHY_3M, VM_PERM_WRITE},
+    {KERNEL_BASE + MMIO_BASE_PHY, MMIO_BASE_PHY, MMIO_BASE_PHY + PHY_3M, VM_PERM_WRITE},
 #endif
 };
 #define kmmap_size (sizeof(kmmap)/sizeof(kmmap[0]))

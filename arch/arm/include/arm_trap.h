@@ -30,6 +30,13 @@
 #define MODE_SVC 0x13
 #define I_BIT 0x80
 
+#define IRQ_TIMER0   0
+#define IRQ_TIMER1   1
+#define IRQ_TIMER2   2
+#define IRQ_TIMER3   3
+#define IRQ_AUX     29
+#define IRQ_MAX     64
+
 #ifndef __ASSEMBLER__
 struct trap_frame {
     u32 r0;
@@ -52,6 +59,23 @@ struct trap_frame {
     u32 cpsr;
     u32 org_r0;
 };
+
+#include "arm_iomap.h"
+
+#define IRQ_REG_BASE            ((MMIO_BASE)+0xB000)
+#define IRQ_REG_BASE_PEND       ((volatile u32*)((IRQ_REG_BASE)+0x200))
+#define IRQ_REG_PEND1           ((volatile u32*)((IRQ_REG_BASE)+0x204))
+#define IRQ_REG_PEND2           ((volatile u32*)((IRQ_REG_BASE)+0x208))
+#define IRQ_REG_FIQ_CTRL        ((volatile u32*)((IRQ_REG_BASE)+0x20C))
+#define IRQ_REG_EN_IRQ1         ((volatile u32*)((IRQ_REG_BASE)+0x210))
+#define IRQ_REG_EN_IRQ2         ((volatile u32*)((IRQ_REG_BASE)+0x214))
+#define IRQ_REG_EN_BASIC_IRQ    ((volatile u32*)((IRQ_REG_BASE)+0x218))
+#define IRQ_REG_DIS_IRQ1        ((volatile u32*)((IRQ_REG_BASE)+0x21C))
+#define IRQ_REG_DIS_IRQ2        ((volatile u32*)((IRQ_REG_BASE)+0x220))
+#define IRQ_REG_DIS_BASIC_IRQ   ((volatile u32*)((IRQ_REG_BASE)+0x224))
+
+#define CPSR_DIS_IRQ_BIT (1<<7)
+#define CPSR_DIS_FIQ_BIT (1<<6)
 
 #endif
 

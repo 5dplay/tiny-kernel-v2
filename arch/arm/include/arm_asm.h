@@ -24,4 +24,16 @@ static inline void get_dfar(u32 *dfar)
     asm volatile("mrc p15, 0, %0, c6, c0, 0" : "=r"(addr) :);
     *dfar = addr;
 }
+
+static inline void get_cpsr(u32 *cpsr)
+{
+    u32 addr;
+    asm volatile("mrs %0, cpsr" : "=r"(addr) :);
+    *cpsr = addr;
+}
+
+static inline void set_cpsr(u32 cpsr)
+{
+    asm volatile("msr cpsr, %0" : : "r"(cpsr));
+}
 #endif
