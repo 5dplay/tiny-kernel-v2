@@ -52,5 +52,8 @@ Mkfile.old
 dkms.conf
 
 *.asm
+*.orig
 image
 compile_flags.txt
+user_init
+user_init_code

@@ -13,6 +13,13 @@ _start:
     cmp r5, #0
     bne halt
 
+setup_svc:
+
+    mov r1, #0x00000080 /* PSR_DISABLE_IRQ */
+    orr r1, #0x00000040 /* PSR_DISABLE_FIQ */
+    orr r1, #0x00000013 /* PSR_MODE_SVC */
+    msr cpsr, r1
+
 /*
     初始化页表, 建立虚拟映射关系
     [0, 8M) -> [0, 8M)

@@ -2,7 +2,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
-CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -g
+CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall
 LDFLAGS =
 SUBDIRS = kernel mm lib driver
 ROOT_DIR = $(shell pwd)
@@ -33,7 +33,7 @@ $(patsubst %, _dir_%, $(SUBDIRS)):
 image: subdirs
 	$(LD) $(KERNEL_LDFLAGS) $(DEF_MODULES) $(MODULES) -o $(@).elf
 	$(OBJCOPY) -O binary $(@).elf $@
-	$(OBJDUMP) -S $(@).elf > $(@).asm
+	$(OBJDUMP) -d $(@).elf > $(@).asm
 
 qemu: image
 	$(QEMU) $(QEMU_OPTS)

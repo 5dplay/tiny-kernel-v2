@@ -1,6 +1,6 @@
 ARCH_DIR=arch/arm
 
-CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include -march=armv7-a -mfpu=vfp -msoft-float
+CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include -march=armv7-a -mfpu=vfp -msoft-float -marm
 LDFLAGS += -r
 SUBDIRS += $(ARCH_DIR)
 KERNEL_LDFLAGS = -T $(ARCH_DIR)/kernel.ld

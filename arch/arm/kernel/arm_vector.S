@@ -1,6 +1,6 @@
 /* copy from uboot */
 #include "arm_trap.h"
-.global arm_vector_start, arm_vector_end
+.global arm_vector_start, arm_vector_end, trapret
 
 .section ".text.vector"
 arm_vector_start:
@@ -36,6 +36,21 @@ __trap_stack_top: .word trap_stack_top
     movs pc, lr
 .endm
 
+.macro setup_trap_stack_svc
+    sub r13, #4
+    str r0, [r13]                       @ save r0
+    ldr r0, __trap_stack_top
+    str lr, [r0]                        @ save caller lr in position 0
+                                        @ of saved stack
+    mrs lr, spsr                        @ get the spsr
+    str lr, [r0, #4]                    @ save spsr in position 1
+                                        @ of saved stack
+    ldr lr, [r0]
+    ldr r0, [r13]
+    add r13, #4
+
+.endm
+
 .macro save_user_regs
     sub sp, #S_FRAME_SIZE
     stmia sp, {r0 - r12}                @ store multi reg to [Rn]
@@ -46,6 +61,14 @@ __trap_stack_top: .word trap_stack_top
     mov r1, lr
     stmia r5, {r0 - r3}                 @ save sp_SVC, lr_SVC, pc, cpsr
     mov r0, sp
+.endm
+
+.macro restore_user_regs_svc
+    ldmia sp, {r0 - lr}^
+    mov r0, r10
+    ldr lr, [sp, #S_PC]
+    add sp, #S_FRAME_SIZE
+    movs pc, lr
 .endm
 
 .macro irq_save_user_regs
@@ -75,7 +98,13 @@ __trap_undef_instruction:
     bl do_undef_instruction
 
 __trap_software_interrupt:
+    setup_trap_stack_svc
+    save_user_regs
     bl do_software_interrupt
+trapret:
+    restore_user_regs_svc
+loop:
+    b loop 
 
 __trap_prefetch_abort:
     bl do_prefetch_abort

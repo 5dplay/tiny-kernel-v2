@@ -5,6 +5,7 @@
 #include "string.h"
 #include "trap.h"
 #include "drv.h"
+#include "proc.h"
 
 void kernel_main()
 {
@@ -48,6 +49,10 @@ void kernel_main()
     enable_trap();
 
     drv_init();
+
+    proc_init();
+
+    scheduler();
 
     printk("reach here\n");
 failed:

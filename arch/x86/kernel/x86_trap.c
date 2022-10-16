@@ -1,6 +1,9 @@
 #include "common.h"
+#include "proc.h"
 #include "type.h"
 #include "trap.h"
+#include "sys_call.h"
+#include "x86_proc.h"
 #include "x86_trap.h"
 #include "x86_asm.h"
 #include "x86_pic.h"
@@ -100,7 +103,47 @@ DECLARE_TRAP_HANDLER(trap_reserved);
 DECLARE_TRAP_HANDLER(trap_coprocessor_err);
 DECLARE_TRAP_HANDLER(trap_alignment_check);
 
-//extern void trap_syscall(struct trap_frame *frame);
+void trap_syscall(struct trap_frame *frame)
+{
+    struct proc *p;
+    struct x86_proc *x;
+
+    p = get_cur_proc();
+    x = (struct x86_proc *)p->arch_proc;
+
+    x->tf->eax = sys_call(x->tf->eax);
+}
+
+int arg_int(int n, int *dst)
+{
+    struct proc *p;
+    struct x86_proc *x;
+    uaddr addr;
+
+    p = get_cur_proc();
+    x = (struct x86_proc *)p->arch_proc;
+    addr = x->tf->esp + (1 + n) * 4; //syscall调用时候会使用call指令, 会额外将当前调用地址压入栈中, 故需要跳过.
+
+    //FIXME: 如果这里出现异常了,是进入缺页异常?
+    *dst = *(int *)addr;
+    return 0;
+}
+
+int arg_ptr(int n, void **dst)
+{
+    struct proc *p;
+    struct x86_proc *x;
+    uaddr addr;
+
+    p = get_cur_proc();
+    x = (struct x86_proc *)p->arch_proc;
+    addr = x->tf->esp + (1 + n) * 4; //syscall调用时候会使用call指令, 会额外将当前调用地址压入栈中, 故需要跳过.
+
+    //FIXME: 如果这里出现异常了,是进入缺页异常?
+    *(uaddr **)dst = (uaddr *) * (uaddr *)addr;
+    return 0;
+}
+
 void trap_page_fault(struct trap_frame *frame)
 {
     uintptr_t addr;
@@ -134,10 +177,7 @@ static void exception_init()
     for (; i < IDT_ENTRY_BUILTIN; i++)
         trap_reg(i, trap_reserved);
 
-#ifdef SUPPORT_SYSCALL
-    void trap_syscall(struct trap_frame * tf);
     trap_reg(T_SYSCALL, trap_syscall);
-#endif
 }
 
 /* FIXME: 以下这两个函数暂时放在这里，后续处理arm的时候看一下如何抽象出来 */
@@ -314,4 +354,3 @@ void enable_trap_v2()
 {
     popcli();
 }
-

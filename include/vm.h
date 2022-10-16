@@ -11,6 +11,8 @@ enum vm_perm_flags_e {
     VM_PERM_USER = 0x2,     /* 默认内核可访问,标记用户是否可访问即可 */
 };
 
+/* FIXME: 思考是否需要vmm *vm参数，看起来没什么必要性 */
+
 /**
 * @brief 分配一个页目录，用于后续的虚拟内存映射
 *
@@ -82,7 +84,19 @@ void vm_reload(vmm *vm, uaddr pg_dir);
 */
 vmm *arch_mmu_init();
 
+/**
+* @brief 获取虚拟内存管理器
+*
+* @return 失败 => NULL
+*/
+vmm *get_mmu();
+
 TK_STATUS kmap(uaddr v_addr, uaddr p_addr, uint size, uint perm_flags);
-void kreload();
+TK_STATUS kernel_map_init(vmm *p_vm, uaddr pg_dir);
+void switch_kvm();
+
+/* defined in each arch */
+struct proc;
+void switch_uvm(struct proc *p);
 
 #endif

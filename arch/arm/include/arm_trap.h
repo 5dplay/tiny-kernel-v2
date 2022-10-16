@@ -27,7 +27,9 @@
 #define S_R1            4
 #define S_R0            0
 
+#define MODE_MASK 0x1f
 #define MODE_SVC 0x13
+#define MODE_USER 0x10
 #define I_BIT 0x80
 
 #define IRQ_TIMER0   0

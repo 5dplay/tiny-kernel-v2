@@ -74,12 +74,17 @@ TK_STATUS mm_init()
     return TK_STATUS_SUCCESS;
 }
 
+vmm *get_mmu()
+{
+    return vm;
+}
+
 TK_STATUS kmap(uaddr v_addr, uaddr p_addr, uint size, uint perm_flags)
 {
     return vm_map(vm, kernel_pg_dir, v_addr, p_addr, size, perm_flags);
 }
 
-void kreload()
+void switch_kvm()
 {
     vm_reload(vm, kernel_pg_dir);
 }

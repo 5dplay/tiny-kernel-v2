@@ -1,6 +1,6 @@
 include $(ROOT_DIR)/Rule.mk
 
-OBJS=main.o string.o printk.o
+OBJS=main.o string.o printk.o proc.o sys_call.o
 
 all: kernel.ko
 

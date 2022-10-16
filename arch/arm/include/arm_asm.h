@@ -18,11 +18,13 @@ static inline void set_vec_base()
                  "mcr p15, 0, r0, c12, c0, 0");
 }
 
-static inline void get_dfar(u32 *dfar)
+static inline void get_dabort(u32 *dfsr, u32 *dfar)
 {
-    u32 addr;
+    u32 fsr, addr;
+    asm volatile("mrc p15, 0, %0, c5, c0, 0" : "=r"(fsr) :);
     asm volatile("mrc p15, 0, %0, c6, c0, 0" : "=r"(addr) :);
     *dfar = addr;
+    *dfsr = fsr;
 }
 
 static inline void get_cpsr(u32 *cpsr)

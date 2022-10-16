@@ -1,11 +1,14 @@
 #include "memlayout.h"
 #include "common.h"
+#include "proc.h"
+#include "sys_call.h"
 #include "trap.h"
 #include "mm.h"
 #include "type.h"
 #include "vm.h"
 #include "arm_asm.h"
 #include "arm_trap.h"
+#include "arm_proc.h"
 
 extern char arm_vector_start[], arm_vector_end[];
 #define ARM_VECTOR_BASE 0xFFFF0000
@@ -43,7 +46,7 @@ void do_##func_name(struct trap_frame *tf)                          \
 
 DECLARE_TRAP_HANDLER(trap_reset)
 DECLARE_TRAP_HANDLER(undef_instruction)
-DECLARE_TRAP_HANDLER(software_interrupt)
+/* DECLARE_TRAP_HANDLER(software_interrupt) */
 DECLARE_TRAP_HANDLER(prefetch_abort)
 /* DECLARE_TRAP_HANDLER(data_abort) */
 DECLARE_TRAP_HANDLER(trap_not_used)
@@ -52,10 +55,92 @@ DECLARE_TRAP_HANDLER(trap_not_used)
 
 void do_data_abort(struct trap_frame *tf)
 {
-    u32 addr;
-    get_dfar(&addr);
-    printk("Failed to access [0x%08x]\n", addr);
+    u32 addr, status;
+
+    get_dabort(&status, &addr);
+    printk("Failed to access [0x%08x], status [0x%08x]\n", addr, status);
     show_tf(tf);
+}
+
+void do_software_interrupt(struct trap_frame *tf)
+{
+    struct proc *p;
+    struct arm_proc *a;
+
+    p = get_cur_proc();
+    a = (struct arm_proc *)p->arch_proc;
+
+    a->tf->r0 = sys_call(a->tf->r7);
+}
+
+int arg_int(int n, int *dst)
+{
+    struct proc *p;
+    struct arm_proc *a;
+
+    /* 目前至多支持四个参数 */
+
+    p = get_cur_proc();
+    a = (struct arm_proc *)p->arch_proc;
+
+    switch (n) {
+        case 0:
+            *dst = a->tf->r0;
+            break;
+
+        case 1:
+            *dst = a->tf->r1;
+            break;
+
+        case 2:
+            *dst = a->tf->r2;
+            break;
+
+        case 3:
+            *dst = a->tf->r3;
+            break;
+
+        default:
+            return -1;
+
+    }
+
+    return 0;
+}
+
+int arg_ptr(int n, void **dst)
+{
+    struct proc *p;
+    struct arm_proc *a;
+
+    /* 目前至多支持四个参数 */
+
+    p = get_cur_proc();
+    a = (struct arm_proc *)p->arch_proc;
+
+    switch (n) {
+        case 0:
+            *dst = (void *)a->tf->r0;
+            break;
+
+        case 1:
+            *dst = (void *)a->tf->r1;
+            break;
+
+        case 2:
+            *dst = (void *)a->tf->r2;
+            break;
+
+        case 3:
+            *dst = (void *)a->tf->r3;
+            break;
+
+        default:
+            return -1;
+
+    }
+
+    return 0;
 }
 
 TK_STATUS irq_init()
