@@ -18,5 +18,6 @@ lsfs: $(LSOBJS)
 
 clean:
 	rm -f *.o mkfs lsfs
+	rm -rf rootfs/*
 
 .PHONY: clean mkfs lsfs

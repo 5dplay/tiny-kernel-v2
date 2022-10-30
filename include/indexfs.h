@@ -84,4 +84,10 @@ static inline int data_linki(struct superblock *sb, struct inode *dst, struct in
     return sb->op->data_linki(sb, dst, src, dname, size);
 }
 
+struct superblock* fs_init();
+struct inode* namei(char *path);
+void dupi(struct inode *ip);
+struct inode* namei_parent(char *path, char *name);
+struct inode* do_createi(char *path, u16 type, u16 major, u16 minor);
+
 #endif

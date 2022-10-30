@@ -1,15 +1,10 @@
-/*
-    x86处理页管理相关的逻辑
-    FIXME: 多架构时候如何处理?
-*/
 #include "mm.h"
+#include "vm.h"
 #include "type.h"
 #include "common.h"
 #include "memlayout.h"
 #include "string.h"
-#if 0
-#include "fs.h"
-#endif
+#include "indexfs.h"
 
 #include "x86_mm.h"
 #include "x86_page.h"
@@ -97,6 +92,31 @@ TK_STATUS x86_page_map(struct x86_vmm *this, uaddr pg_dir, uaddr vaddr, uaddr pa
     return TK_STATUS_SUCCESS;
 }
 
+int __x86_vm_resize_inc(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz)
+{
+    uaddr start, mem;
+
+    if (new_sz >= KERNEL_BASE)
+        return 0;
+
+    if (old_sz > new_sz)
+        return old_sz;
+
+    start = PAGE_ALIGN_CEIL(old_sz);
+
+    for (; start < new_sz; start += PAGE_SIZE) {
+        mem = (uaddr)page_alloc();
+
+        if (mem == 0)
+            panic("%s: oom, TBD.\n", __func__);
+
+        vm_map((vmm *)this, pg_dir, start, virt_to_phy(mem), PAGE_SIZE, VM_PERM_WRITE | VM_PERM_USER);
+    }
+
+    return new_sz;
+}
+
+
 int __x86_vm_resize_dec(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz)
 {
     uaddr start, mem;
@@ -125,7 +145,6 @@ int __x86_vm_resize_dec(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint ne
     return new_sz;
 }
 
-#if 0
 //此外这里仍然做的一件事就是将用户的虚拟地址重新解释成内核的虚拟地址. 这里是否可以抽象出来呢?
 int x86_page_prog_load(struct x86_vmm *this, struct vm_prog_load_params *params)
 {
@@ -133,14 +152,15 @@ int x86_page_prog_load(struct x86_vmm *this, struct vm_prog_load_params *params)
     uaddr pg_dir, vaddr;
     uaddr pa, va;
     uint i, n, off, cnt;
+    struct inode *ip;
 
     pg_dir = params->pg_dir;
     vaddr = params->usr_va;
     off = params->off;
+    ip = params->ip;
 
     for (i = 0; i < params->size; i += PAGE_SIZE, vaddr += PAGE_SIZE) {
-        pte_val = s_get_pg_pte((struct allocator *)&this->m_bootm_alloc,
-                               (u32 *)pg_dir, vaddr, 0);
+        pte_val = s_get_pg_pte((u32 *)pg_dir, vaddr, 0);
 
         if ((NULL == pte_val) && !(*pte_val & PAGING_BIT_P))
             panic("%s: vaddr = %p not exist.\n", vaddr);
@@ -148,7 +168,7 @@ int x86_page_prog_load(struct x86_vmm *this, struct vm_prog_load_params *params)
         n = min(params->size - i, PAGE_SIZE);
         pa = PTE_ADDR(*pte_val);
         va = phy_to_virt(pa);
-        cnt = readi(params->ip, (u8 *)va, off + i, n);
+        cnt = data_readi(ip->superb, ip, (u8 *)va, off + i, n);
 
         if (cnt != n)
             return -1;
@@ -156,7 +176,6 @@ int x86_page_prog_load(struct x86_vmm *this, struct vm_prog_load_params *params)
 
     return 0;
 }
-#endif
 
 TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir)
 {
@@ -177,6 +196,7 @@ TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir)
 
     return TK_STATUS_SUCCESS;
 }
+
 #if 0
 int x86_page_clone_pg_dir(struct x86_vmm *this, uaddr dst, uaddr src, uaddr va)
 {

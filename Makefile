@@ -46,6 +46,11 @@ qemu_gdb: image.elf
 
 xv6.img:
 	$(MAKE) -C mkfs.tinyfs
+	$(MAKE) -C rootfs
+	cp rootfs/init mkfs.tinyfs/rootfs/
+	cp rootfs/sh mkfs.tinyfs/rootfs/
+	cp rootfs/ls mkfs.tinyfs/rootfs/
+	cp rootfs/sleep mkfs.tinyfs/rootfs/
 	./mkfs.tinyfs/mkfs -d ./mkfs.tinyfs/rootfs -o $(@)
 
 astyle:
@@ -57,5 +62,7 @@ clean:
 	find . -name "*.asm" | xargs rm -rf
 	find . -name "*.orig" | xargs rm -rf
 	rm -f image image.elf image.asm xv6.img
+	$(MAKE) -C mkfs.tinyfs clean
+	$(MAKE) -C rootfs clean
 
 .PHONY: clean xv6.img $(patsubst %, _dir_%, $(SUBDIRS))

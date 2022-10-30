@@ -1,4 +1,5 @@
 #include "mm.h"
+#include "type.h"
 #include "vm.h"
 #include "memlayout.h"
 
@@ -51,4 +52,17 @@ TK_STATUS vm_map(vmm *vm, uaddr pg_dir, uaddr v_addr, uaddr p_addr,
 void vm_reload(vmm *vm, uaddr pg_dir)
 {
     lcr3(virt_to_phy(pg_dir));
+}
+
+uint vm_resize(vmm *vm, uaddr pg_dir, uint old_sz, uint new_sz)
+{
+    if (new_sz > old_sz)
+        return __x86_vm_resize_inc((struct x86_vmm *)vm, pg_dir, old_sz, new_sz);
+    else
+        return __x86_vm_resize_dec((struct x86_vmm *)vm, pg_dir, old_sz, new_sz);
+}
+
+TK_STATUS vm_prog_load(vmm *vm, struct vm_prog_load_params *params)
+{
+    return x86_page_prog_load((struct x86_vmm *)vm, params);
 }

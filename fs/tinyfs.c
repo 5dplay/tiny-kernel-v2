@@ -32,7 +32,7 @@ static struct superblock_op tinyfs_op = {
     .data_linki = tinyfs_data_linki
 };
 
-int fs_init(int dev)
+struct superblock* fs_init(int dev)
 {
     struct block_dev *b_dev;
     struct block_buf *buf;
@@ -62,14 +62,13 @@ int fs_init(int dev)
            this->size, this->n_blocks, this->n_inodes,
            this->inode_off, this->bitmap_off);
 #endif
-    /*
     //FIXME: 这里没必要调用外面的函数
     ip = tinyfs_geti((struct superblock *)this, ROOTINO);
-    tinyfs_meta_readi(this, ip);
-    this->parent.root_inode = (struct inode *)ip;
-    */
-    return 0;
+    tinyfs_meta_readi((struct superblock *)this, ip);
+    this->parent.root = (struct inode *)ip;
 
+
+    return (struct superblock *)this;
 }
 
 static struct inode* tinyfs_geti(struct superblock *superb, u32 idx)

@@ -59,6 +59,20 @@ void usr_init_proc(struct proc *p)
     x->tf->eip = 0; //beginning of initcode.S
 }
 
+void usr_exec_proc(struct proc *p, uaddr ep, u32 sp)
+{
+    struct x86_proc *x;
+
+    if (p == NULL || sizeof(struct x86_proc) > sizeof(p->arch_proc))
+        panic("p = %p, sizeof(x86_proc) = %d\n", p, sizeof(struct x86_proc));
+
+    x = (struct x86_proc *)p->arch_proc;
+
+    x->tf->eip = ep;
+    x->tf->esp = sp;
+}
+
+
 /**
 * @brief 存储旧的上下文信息,并且加载新的上下文信息
 *

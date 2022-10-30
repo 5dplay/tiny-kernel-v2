@@ -2,17 +2,27 @@
 #define __TINY_KERNEL_PROC_H__
 
 #include "type.h"
+#include "limits.h"
 enum proc_state {UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE};
 
 #define PROC_NAME_MAX_SIZE 16
 #define NPROC 64
 
+
+struct file;
+struct inode;
 struct proc {
     enum proc_state state;              /* 当前进程的状态 */
 
     char comm[PROC_NAME_MAX_SIZE];      /* 进程名 */
     int pid;                            /* 进程id */
     struct proc *parent;                /* 父进程id */
+
+    /* fs start */
+    struct file *ofile[NOFILE];
+    struct inode *cwd;
+    struct inode *root;
+    /* fs end */
 
     uaddr pg_dir;                       /* 虚拟内存相关 */
     u32 mem_size;
@@ -33,6 +43,9 @@ void arch_init_proc(struct proc *p);
 
 /* 首个用户进程各arch最终初始化 */
 void usr_init_proc(struct proc *p);
+
+/* for do_exec */
+void usr_exec_proc(struct proc *p, uaddr ep, u32 sp);
 
 void join(struct proc *p);
 

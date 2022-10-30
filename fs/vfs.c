@@ -1,53 +1,51 @@
+/*
+ * FIXME: 本来打算构建一层抽象的文件系统，但是感觉设计过度了，还是采用原设计
+ */
+
 #include "common.h"
 #include "vfs.h"
+#include "indexfs.h"
 #include "limits.h"
 #include "proc.h"
 #include "string.h"
 
-struct proc_file_ctx {
-    struct proc *p;
-    struct file *ofile[NOFILE];
-    void *cwd;
-    void *root;
-} g_proc_file_ctx[NPROC];
-
 int sys_setup()
 {
-    fs_init(ROOTDEV);
+    struct superblock *superb;
+    struct proc *p;
+    superb = fs_init(ROOTDEV);
 
-    memset(&g_proc_file_ctx, 0x0, sizeof(g_proc_file_ctx));
+    p = get_cur_proc();
+    p->cwd = p->root = superb->root;
     return 0;
 }
 
-static struct proc_file_ctx* alloc_proc_ctx()
+struct file file_cached[NFILE];
+/* struct devsw devsw[NDEV]; */
+
+struct file* file_alloc()
 {
     int i;
 
-    for (i = 0; i < NPROC; i++)
-        if (g_proc_file_ctx[i].p != NULL)
-            return &g_proc_file_ctx[i];
+    for (i = 0; i < NFILE; i++) {
+        if (file_cached[i].ref == 0) {
+            file_cached[i].ref = 1;
+            return &file_cached[i];
+        }
+    }
 
     return NULL;
 }
 
-static void free_proc_ctx()
+struct file* file_dup(struct file *f)
 {
-    panic("TO BE DONE");
+    f->ref++;
+    return f;
 }
 
-int proc_setup_fs(struct proc *p)
+int file_close(struct file *f)
 {
-    int i;
-    struct proc_file_ctx *ctx;
-
-    for (i = 0; i < NPROC; i++) {
-        if (g_proc_file_ctx[i].p == p) {
-            printk("%s: %s already setup fs\n", __func__, p->comm);
-            return 0;
-        }
-    }
-
-    ctx = alloc_proc_ctx();
-
+    f->ref--;
+    //FIXME: so many sth to do
     return 0;
 }

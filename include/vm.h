@@ -11,6 +11,15 @@ enum vm_perm_flags_e {
     VM_PERM_USER = 0x2,     /* 默认内核可访问,标记用户是否可访问即可 */
 };
 
+struct inode;
+struct vm_prog_load_params {
+    uaddr pg_dir;
+    uaddr usr_va;
+    struct inode *ip;
+    uint off;
+    uint size;
+};
+
 /* FIXME: 思考是否需要vmm *vm参数，看起来没什么必要性 */
 
 /**
@@ -65,9 +74,11 @@ TK_STATUS vm_map(vmm *vm, uaddr pg_dir, uaddr v_addr, uaddr p_addr,
 * @param [in]new_sz 新的虚拟内存结束地址
 * @param [in]old_sz 旧的虚拟内存结束地址
 *
-* @return TK_STATUS
+* @return 调整后的大小
 */
-TK_STATUS vm_resize(vmm *vm, uaddr pg_dir, uint new_sz, uint old_sz);
+uint vm_resize(vmm *vm, uaddr pg_dir, uint old_sz, uint new_sz);
+
+TK_STATUS vm_prog_load(vmm *vm, struct vm_prog_load_params *params);
 
 /**
 * @brief 重新加载内存地址

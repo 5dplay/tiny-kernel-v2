@@ -1,4 +1,5 @@
 #include "indexfs.h"
+#include "proc.h"
 #include "string.h"
 
 // Copy the next path element from path into name.
@@ -56,13 +57,12 @@ static struct inode* namex(char *path, int find_parent, char *name)
         4. 获取下一个目录项
     */
 
-    /*
     if (*path == '/')
-        ip = cur_proc()->root;
+        ip = get_cur_proc()->root;
     else
-        ip = cur_proc()->cwd;
-    idup(ip);
-    */
+        ip = get_cur_proc()->cwd;
+
+    dupi(ip);
 
     while ((path = skipelem(path, name)) != NULL) {
         //FIXME: 记得加锁
@@ -135,3 +135,7 @@ struct inode* do_createi(char *path, u16 type, u16 major, u16 minor)
     return ip;
 }
 
+void dupi(struct inode *ip)
+{
+    ip->ref++;
+}

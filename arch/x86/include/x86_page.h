@@ -47,6 +47,11 @@ TK_STATUS x86_page_map(struct x86_vmm *this, uaddr pg_dir, uaddr vaddr, uaddr pa
 */
 TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir);
 
+struct vm_prog_load_params;
+TK_STATUS x86_page_prog_load(struct x86_vmm *this, struct vm_prog_load_params *params);
+
+int __x86_vm_resize_inc(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz);
+int __x86_vm_resize_dec(struct x86_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz);
 #endif /* __ASSEMBLER__ */
 
 #endif
