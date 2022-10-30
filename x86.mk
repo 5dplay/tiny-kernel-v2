@@ -9,6 +9,6 @@ MODULES = $(ARCH_DIR)/boot/boot.o $(ARCH_DIR)/lib/x86_lib.ko $(ARCH_DIR)/mm/x86_
 
 
 QEMU = qemu-system-i386
-QEMU_OPTS = -kernel image.elf -m 512
+QEMU_OPTS = -kernel image.elf -m 512 -hdb xv6.img
 
 export MODULES

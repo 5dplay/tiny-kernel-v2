@@ -6,6 +6,7 @@
 #include "trap.h"
 #include "drv.h"
 #include "proc.h"
+#include "bio.h"
 
 void kernel_main()
 {
@@ -47,6 +48,8 @@ void kernel_main()
     irq_init();
 
     enable_trap();
+
+    bio_init();
 
     drv_init();
 

@@ -4,10 +4,10 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
 CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall
 LDFLAGS =
-SUBDIRS = kernel mm lib driver
+SUBDIRS = kernel mm lib fs driver
 ROOT_DIR = $(shell pwd)
 MODULES =
-DEF_MODULES = kernel/kernel.ko mm/mm.ko lib/lib.ko driver/drv.ko
+DEF_MODULES = kernel/kernel.ko mm/mm.ko lib/lib.ko fs/fs.ko driver/drv.ko
 ARCH_DIR = 
 CFLAGS += -I$(ROOT_DIR)/include
 
@@ -44,6 +44,10 @@ qemu_debug: image
 qemu_gdb: image.elf
 	gdb-multiarch image.elf --ex="target remote localhost:1234"
 
+xv6.img:
+	$(MAKE) -C mkfs.tinyfs
+	./mkfs.tinyfs/mkfs -d ./mkfs.tinyfs/rootfs -o $(@)
+
 astyle:
 	astyle --style=linux --recursive -s4 -S -H -p -U -f *.c *.h
 
@@ -52,6 +56,6 @@ clean:
 	find . -name "*.ko" | xargs rm -rf
 	find . -name "*.asm" | xargs rm -rf
 	find . -name "*.orig" | xargs rm -rf
-	rm -f image image.elf image.asm
+	rm -f image image.elf image.asm xv6.img
 
-.PHONY: clean $(patsubst %, _dir_%, $(SUBDIRS))
+.PHONY: clean xv6.img $(patsubst %, _dir_%, $(SUBDIRS))

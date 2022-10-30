@@ -18,10 +18,9 @@ extern int sys_write(void);
 extern int sys_mknod(void);
 extern int sys_fstat(void);
 extern int sys_sleep(void);
-
-extern int sys_test(void);
 #endif
 
+extern int sys_setup(void);
 static int (*sys_calls[])(void) = {
 #if 0
     [SYS_dup] = sys_dup,
@@ -38,6 +37,7 @@ static int (*sys_calls[])(void) = {
     [SYS_test] = sys_test,
     [SYS_sleep] = sys_sleep,
 #endif
+    [SYS_setup] = sys_setup,
 };
 
 int sys_call(int idx)
