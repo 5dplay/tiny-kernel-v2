@@ -2,7 +2,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
-CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall
+CFLAGS = -std=gnu99 -O2 -ffreestanding -Wall -g
 LDFLAGS =
 SUBDIRS = kernel mm lib fs driver
 ROOT_DIR = $(shell pwd)
@@ -21,7 +21,7 @@ endif
 
 include $(PRODUCT).mk
 
-export CC LD OBJCOPY OBJDUMP CFLAGS LDFLAGS DEF_MODULES ROOT_DIR
+export CC LD OBJCOPY OBJDUMP CFLAGS LDFLAGS DEF_MODULES ROOT_DIR USR_LDFLAGS
 
 all: subdirs image
 
@@ -46,7 +46,7 @@ qemu_gdb: image.elf
 
 xv6.img:
 	$(MAKE) -C mkfs.tinyfs
-	$(MAKE) -C rootfs
+	$(MAKE) -C rootfs ARCH=$(arch)
 	cp rootfs/init mkfs.tinyfs/rootfs/
 	cp rootfs/sh mkfs.tinyfs/rootfs/
 	cp rootfs/ls mkfs.tinyfs/rootfs/

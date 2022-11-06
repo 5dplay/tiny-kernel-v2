@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memlayout.h"
 #include "mm.h"
 #include "vm.h"
 #include "string.h"
@@ -41,6 +42,13 @@ void arch_init_proc(struct proc *p)
     a->ctx->lr = (uaddr)arm_forkret_entry;
 }
 
+int arch_kernel_map_init(vmm *p_vm, uaddr pg_dir)
+{
+    vm_map(p_vm, pg_dir, KERNEL_BASE + MMIO_BASE_PHY, MMIO_BASE_PHY, PHY_4M, VM_PERM_WRITE);
+    vm_map(p_vm, pg_dir, ARM_VECTOR_BASE, virt_to_phy((uaddr)arm_vector_start), arm_vector_end - arm_vector_start, VM_PERM_WRITE);
+    return 0;
+}
+
 void usr_init_proc(struct proc *p)
 {
     struct arm_proc *a;
@@ -50,7 +58,6 @@ void usr_init_proc(struct proc *p)
         panic("p = %p, sizeof(arm_proc) = %d\n", p, sizeof(*a));
 
     a = (struct arm_proc *)p->arch_proc;
-    vm_map(get_mmu(), p->pg_dir, ARM_VECTOR_BASE, virt_to_phy((uaddr)arm_vector_start), arm_vector_end - arm_vector_start, VM_PERM_WRITE);
 
     memset(a->tf, 0x0, sizeof(*a->tf));
 
@@ -92,4 +99,16 @@ void switch_uvm(struct proc *p)
 
     a = (struct arm_proc *)p->arch_proc;
     vm_reload(get_mmu(), p->pg_dir);
+}
+
+void usr_exec_proc(struct proc *p, uaddr ep, u32 sp)
+{
+    struct arm_proc *a;
+
+    if (p == NULL || sizeof(*a) > sizeof(p->arch_proc))
+        panic("p = %p, sizeof(arm_proc) = %d\n", p, sizeof(*a));
+
+    a = (struct arm_proc *)p->arch_proc;
+    a->tf->pc = ep;
+    a->tf->sp = sp;
 }

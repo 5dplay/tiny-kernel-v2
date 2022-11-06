@@ -13,6 +13,7 @@ int sys_setup()
 {
     struct superblock *superb;
     struct proc *p;
+
     superb = fs_init(ROOTDEV);
 
     p = get_cur_proc();

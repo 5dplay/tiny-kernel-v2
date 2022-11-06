@@ -3,6 +3,7 @@ include $(ROOT_DIR)/Rule.mk
 drv-dir-${CONFIG_KEYBOARD} += keyboard
 drv-dir-${CONFIG_MINI_UART} += mini_uart
 drv-dir-${CONFIG_IDE} += ide
+drv-dir-${CONFIG_EMMC} += emmc
 
 OBJS = $(patsubst %, %.ko, $(drv-dir-y))
 $(info $(drv-dir-y))

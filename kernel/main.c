@@ -7,6 +7,7 @@
 #include "drv.h"
 #include "proc.h"
 #include "bio.h"
+#include "block_dev.h"
 
 void kernel_main()
 {
@@ -50,6 +51,8 @@ void kernel_main()
     enable_trap();
 
     bio_init();
+
+    block_dev_init();
 
     drv_init();
 

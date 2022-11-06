@@ -19,10 +19,6 @@ struct mmap_desc {
 static struct mmap_desc kmmap[] = {
     {KERNEL_BASE, 0, PHY_8M, VM_PERM_WRITE}, /*可读可写*/
     {KERNEL_BASE + PHY_8M, PHY_8M, PHY_TOP, VM_PERM_WRITE}, /*可读可写*/
-#ifdef BOARD_RASPI2
-#define MMIO_BASE_PHY 0x3F000000
-    {KERNEL_BASE + MMIO_BASE_PHY, MMIO_BASE_PHY, MMIO_BASE_PHY + PHY_3M, VM_PERM_WRITE},
-#endif
 };
 #define kmmap_size (sizeof(kmmap)/sizeof(kmmap[0]))
 
@@ -36,6 +32,11 @@ TK_STATUS kernel_map_init(vmm *p_vm, uaddr pg_dir)
         vm_map(p_vm, pg_dir, kmmap[i].virt, kmmap[i].phys_start,
                kmmap[i].phys_end - kmmap[i].phys_start, kmmap[i].flags);
     }
+
+#ifdef ARCH_KERNEL_MAP_INIT
+    extern int arch_kernel_map_init(vmm * p_vm, uaddr pg_dir);
+    arch_kernel_map_init(p_vm, pg_dir);
+#endif
 
     return TK_STATUS_SUCCESS;
 }

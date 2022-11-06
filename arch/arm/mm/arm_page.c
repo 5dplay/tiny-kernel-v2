@@ -4,13 +4,12 @@
 */
 #include "list.h"
 #include "mm.h"
+#include "vm.h"
 #include "type.h"
 #include "common.h"
 #include "memlayout.h"
 #include "string.h"
-#if 0
-#include "fs.h"
-#endif
+#include "indexfs.h"
 
 #include "arm_mm.h"
 #include "arm_page.h"
@@ -104,6 +103,30 @@ TK_STATUS arm_page_map(struct arm_vmm *this, struct page_map_info *info)
     return TK_STATUS_SUCCESS;
 }
 
+int __arm_vm_resize_inc(struct arm_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz)
+{
+    uaddr start, mem;
+
+    if (new_sz >= KERNEL_BASE)
+        return 0;
+
+    if (old_sz > new_sz)
+        return old_sz;
+
+    start = PAGE_ALIGN_CEIL(old_sz);
+
+    for (; start < new_sz; start += PAGE_SIZE) {
+        mem = (uaddr)page_alloc();
+
+        if (mem == 0)
+            panic("%s: oom, TBD.\n", __func__);
+
+        vm_map((vmm *)this, pg_dir, start, virt_to_phy(mem), PAGE_SIZE, VM_PERM_WRITE | VM_PERM_USER);
+    }
+
+    return new_sz;
+}
+
 int __arm_vm_resize_dec(struct arm_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz)
 {
     uaddr start, mem;
@@ -132,7 +155,6 @@ int __arm_vm_resize_dec(struct arm_vmm *this, uaddr pg_dir, uint old_sz, uint ne
     return new_sz;
 }
 
-#if 0
 //此外这里仍然做的一件事就是将用户的虚拟地址重新解释成内核的虚拟地址. 这里是否可以抽象出来呢?
 int arm_page_prog_load(struct arm_vmm *this, struct vm_prog_load_params *params)
 {
@@ -140,22 +162,23 @@ int arm_page_prog_load(struct arm_vmm *this, struct vm_prog_load_params *params)
     uaddr pg_dir, vaddr;
     uaddr pa, va;
     uint i, n, off, cnt;
+    struct inode *ip;
 
     pg_dir = params->pg_dir;
     vaddr = params->usr_va;
     off = params->off;
+    ip = params->ip;
 
     for (i = 0; i < params->size; i += PAGE_SIZE, vaddr += PAGE_SIZE) {
-        pte_val = s_get_pg_pte((struct allocator *)&this->m_bootm_alloc,
-                               (u32 *)pg_dir, vaddr, 0);
+        pte_val = s_get_pg_pte((u32 *)pg_dir, vaddr, 0);
 
-        if ((NULL == pte_val) && !(*pte_val & PAGING_BIT_P))
+        if ((NULL == pte_val) && !(*pte_val & PTE_DEF_FLAGS))
             panic("%s: vaddr = %p not exist.\n", vaddr);
 
         n = min(params->size - i, PAGE_SIZE);
         pa = PTE_ADDR(*pte_val);
         va = phy_to_virt(pa);
-        cnt = readi(params->ip, (u8 *)va, off + i, n);
+        cnt = data_readi(ip->superb, ip, (u8 *)va, off + i, n);
 
         if (cnt != n)
             return -1;
@@ -163,7 +186,6 @@ int arm_page_prog_load(struct arm_vmm *this, struct vm_prog_load_params *params)
 
     return 0;
 }
-#endif
 
 TK_STATUS arm_page_free_pg_dir(struct arm_vmm *this, uaddr pg_dir)
 {

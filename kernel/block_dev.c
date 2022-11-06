@@ -1,6 +1,7 @@
 #include "common.h"
 #include "block_dev.h"
 #include "limits.h"
+#include "string.h"
 
 struct block_dev g_block_dev[NDEV];
 
@@ -38,4 +39,10 @@ struct block_dev* get_block_dev(u32 dev)
     }
 
     return NULL;
+}
+
+int block_dev_init()
+{
+    memset(&g_block_dev, 0x0, sizeof(g_block_dev));
+    return 0;
 }

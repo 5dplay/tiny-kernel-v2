@@ -38,4 +38,14 @@ static inline void set_cpsr(u32 cpsr)
 {
     asm volatile("msr cpsr, %0" : : "r"(cpsr));
 }
+
+static inline void flush_tlb(void)
+{
+    uint val = 0;
+    __asm__ __volatile__("mcr p15, 0, %0, c8, c7, 0" : : "r"(val):);
+
+    // invalid entire data and instruction cache
+    __asm__ __volatile__("mcr p15, 0, %0, c7, c10, 0": : "r"(val):);
+    __asm__ __volatile__("mcr p15, 0, %0, c7, c11, 0": : "r"(val):);
+}
 #endif

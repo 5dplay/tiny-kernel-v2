@@ -12,7 +12,7 @@
 #include <dirent.h>
 #include "tk_fs.h"
 
-#define MAX_BLOCK_NUM 1000
+#define MAX_BLOCK_NUM 1024
 #define MAX_INODE_NUM 100
 #define MAX_BITMAP_NUM ((MAX_BLOCK_NUM/FS_BITS_PER_BLOCK)+1)
 #define MAX_INODE_BLOCK_NUM ((MAX_BLOCK_NUM/FS_INODE_NUM_PER_BLOCK)+1)

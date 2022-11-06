@@ -24,6 +24,10 @@ ifeq ($(CONFIG_NO_DRV), y)
 CFLAGS += -DNO_DRV
 endif
 
+ifeq ($(CONFIG_ARCH_KERNEL_MAP_INIT), y)
+CFLAGS += -DARCH_KERNEL_MAP_INIT
+endif
+
 %.o:%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 %.o:%.S

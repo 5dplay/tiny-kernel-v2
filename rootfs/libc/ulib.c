@@ -31,6 +31,7 @@ int strlen(const char *s)
     return n;
 }
 
+#if defined(x86)
 static inline void stosb(void *addr, int data, int cnt)
 {
     asm volatile("cld; rep stosb" :
@@ -44,6 +45,19 @@ void* memset(void *dst, int c, int n)
     stosb(dst, c, n);
     return dst;
 }
+#elif defined(arm)
+void* memset(void *dst, int val, int cnt)
+{
+    char *xs = (char *)dst;
+
+    while (cnt--)
+        *xs++ = val;
+
+    return dst;
+}
+
+#endif
+
 
 char* strchr(const char *s, char c)
 {

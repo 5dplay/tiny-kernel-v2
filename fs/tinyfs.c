@@ -50,7 +50,7 @@ struct superblock* fs_init(int dev)
     memcpy(&superb_disk, buf->data, sizeof(superb_disk));
 
     if (superb_disk.magic != TINY_FS_MAGIC)
-        return -1;
+        return NULL;
 
     this->size = superb_disk.size;
     this->n_blocks = superb_disk.n_blocks;
@@ -66,7 +66,6 @@ struct superblock* fs_init(int dev)
     ip = tinyfs_geti((struct superblock *)this, ROOTINO);
     tinyfs_meta_readi((struct superblock *)this, ip);
     this->parent.root = (struct inode *)ip;
-
 
     return (struct superblock *)this;
 }

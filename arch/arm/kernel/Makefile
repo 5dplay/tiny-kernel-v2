@@ -11,4 +11,4 @@ user_init: user_init.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o user_init.out user_init.o
 	$(OBJCOPY) -S -O binary user_init.out user_init_code
 	$(LD) $(LDFLAGS) -o user_init -b binary user_init_code
-	$(OBJDUMP) -S user_init.o > $(@F).asm
+	$(OBJDUMP) -d user_init.o > $(@F).asm

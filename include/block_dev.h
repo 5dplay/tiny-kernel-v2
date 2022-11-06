@@ -13,5 +13,6 @@ struct block_dev {
 
 struct block_dev* get_block_dev(u32 dev);
 int register_block_dev(u32 dev, void (*rw)(struct block_buf *));
+int block_dev_init();
 
 #endif

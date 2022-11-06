@@ -17,8 +17,6 @@ extern void __trap_init();
 
 TK_STATUS trap_init()
 {
-    kmap(ARM_VECTOR_BASE, virt_to_phy((uaddr)arm_vector_start), arm_vector_end - arm_vector_start, VM_PERM_USER);
-
     set_vec_base();
 
     return TK_STATUS_SUCCESS;
@@ -70,7 +68,7 @@ void do_software_interrupt(struct trap_frame *tf)
     p = get_cur_proc();
     a = (struct arm_proc *)p->arch_proc;
 
-    a->tf->r0 = sys_call(a->tf->r7);
+    a->tf->r0 = sys_call(tf->r7);
 }
 
 int arg_int(int n, int *dst)

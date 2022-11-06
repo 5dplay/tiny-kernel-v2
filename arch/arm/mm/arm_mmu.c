@@ -27,7 +27,7 @@ uaddr vm_alloc_pg_dir(vmm *vm)
 
 void vm_free_pg_dir(vmm *vm, uaddr pg_dir)
 {
-    panic("TO BE DONE\n");
+    arm_page_free_pg_dir((struct arm_vmm *)vm, pg_dir);
 }
 
 TK_STATUS vm_map(vmm *vm, uaddr pg_dir, uaddr v_addr, uaddr p_addr,
@@ -59,5 +59,19 @@ TK_STATUS vm_map(vmm *vm, uaddr pg_dir, uaddr v_addr, uaddr p_addr,
 void vm_reload(vmm *vm, uaddr pg_dir)
 {
     mcr_ttbr0(virt_to_phy(pg_dir));
+    flush_tlb();
     return ;
+}
+
+uint vm_resize(vmm *vm, uaddr pg_dir, uint old_sz, uint new_sz)
+{
+    if (new_sz > old_sz)
+        return __arm_vm_resize_inc((struct arm_vmm *)vm, pg_dir, old_sz, new_sz);
+    else
+        return __arm_vm_resize_dec((struct arm_vmm *)vm, pg_dir, old_sz, new_sz);
+}
+
+TK_STATUS vm_prog_load(vmm *vm, struct vm_prog_load_params *params)
+{
+    return arm_page_prog_load((struct arm_vmm *)vm, params);
 }

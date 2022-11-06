@@ -1,9 +1,9 @@
 include $(ROOT_DIR)/Rule.mk
 
+OBJS = sd.o delays.o
 
-OBJS=page_alloc.o mm.o
+all: emmc.ko
 
-all: mm.ko
-
-mm.ko: $(OBJS)
+emmc.ko: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+	cp $@ ../
