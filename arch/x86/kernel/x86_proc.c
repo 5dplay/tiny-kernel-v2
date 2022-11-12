@@ -39,6 +39,17 @@ void arch_init_proc(struct proc *p)
     x->ctx->eip = (uaddr)forkret;
 }
 
+void arch_free_proc(struct proc *p)
+{
+    struct x86_proc *x;
+
+    if (p == NULL || sizeof(struct x86_proc) > sizeof(p->arch_proc))
+        panic("p = %p, sizeof(x86_proc) = %d\n", p, sizeof(struct x86_proc));
+
+    x = (struct x86_proc *)p->arch_proc;
+    page_free(x->kstack);
+}
+
 void usr_init_proc(struct proc *p)
 {
     struct x86_proc *x;
@@ -119,4 +130,16 @@ void switch_uvm(struct proc *p)
     x = (struct x86_proc *)p->arch_proc;
     setup_tss((struct x86_vmm *)get_mmu(), (uaddr)(x->kstack + PAGE_SIZE));
     vm_reload(get_mmu(), p->pg_dir);
+}
+
+int trap_fork_proc(struct proc *dst, struct proc *src)
+{
+    struct x86_proc *dx, *sx;
+
+    dx = (struct x86_proc *)dst->arch_proc;
+    sx = (struct x86_proc *)src->arch_proc;
+    memcpy(dx->tf, sx->tf, sizeof(*dx->tf));
+    //fork出来的子进程返回0
+    dx->tf->eax = 0;
+    return 0;
 }

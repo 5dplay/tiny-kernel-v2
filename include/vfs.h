@@ -10,13 +10,13 @@
 #define O_CREATE  0x200
 
 struct file_operations;
-
+struct inode;
 struct file {
-    enum {FD_NONE, FD_REG} type;
+    enum {FD_NONE, FD_INODE, FD_REG} type;
     int ref;
     int flag;
 
-    void *fnode;
+    struct inode *ip;
     u32 off;
 
     struct file_operations *f_op;
@@ -64,5 +64,33 @@ static inline int fclose(struct file *f)
 struct file* file_alloc(void);
 struct file* file_dup(struct file *);
 int file_close(struct file *f);
+
+// table mapping major device number to
+// device functions
+struct devsw {
+    int (*read)(struct inode*, char*, int);
+    int (*write)(struct inode*, char*, int);
+};
+
+extern struct devsw devsw[];
+#define CONSOLE 1
+int console_init();
+void console_intr();
+void console_putc(int c);
+int console_getc();
+
+struct stat {
+    u16 type;
+    u16 n_link;
+    u32 dev;
+    u32 ino;
+    u32 size;
+};
+
+enum {
+    SEEK_SET = 0,       //设置新的读写位置
+    SEEK_CUR,           //在当前读写位置
+    SEEK_END            //在文件尾部位置
+};
 
 #endif

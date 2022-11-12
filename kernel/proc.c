@@ -6,6 +6,8 @@
 #include "common.h"
 #include "proc.h"
 #include "vm.h"
+#include "vfs.h"
+#include "indexfs.h"
 
 static struct proc s_proc_list[NPROC];
 static int s_cur_proc = -1;
@@ -128,12 +130,164 @@ void scheduler()
 
             p->state = RUNNING;
 
+#if 0
             printk("%s join\n", p->comm);
+#endif
             join(p);
-            printk("reach here\n");
             switch_kvm();
 
             s_cur_proc = -1;
         }
+    }
+}
+
+int sys_fork(void)
+{
+    int sub_pid, i;
+    struct proc *sub_proc, *cur;
+    vmm *vm;
+
+    //分配一个新的进程描述符
+    cur = get_cur_proc();
+    sub_proc = proc_alloc();
+
+    if (sub_proc == NULL) {
+        printk("failed to alloc proc\n");
+        return -1;
+    }
+
+    vm = get_mmu();
+    sub_proc->parent = cur;
+    //拷贝当前进程的内存
+    sub_proc->pg_dir = vm_alloc_pg_dir(vm);
+
+    kernel_map_init(vm, sub_proc->pg_dir);
+
+    //拷贝用户进程的内存映射
+    if (vm_clone_pg_dir(vm, sub_proc->pg_dir, cur->pg_dir, cur->mem_size) < 0) {
+        printk("failed to fork proc\n");
+        goto free_proc;
+    }
+
+    sub_proc->mem_size = cur->mem_size;
+
+    //拷贝当前进程的文件描述符
+    for (i = 0; i < NOFILE; i++)
+        if (cur->ofile[i])
+            sub_proc->ofile[i] = file_dup(cur->ofile[i]);
+
+    //拷贝特定的代码段相关
+    trap_fork_proc(sub_proc, cur);
+
+    sub_proc->cwd = cur->cwd;
+    sub_proc->root = cur->root;
+    dupi(cur->cwd);
+    dupi(cur->root);
+
+    strncpy(sub_proc->comm, cur->comm, sizeof(sub_proc->comm) - 1);
+    sub_pid = sub_proc->pid;
+    sub_proc->state = RUNNABLE;
+    //返回子进程的pid
+    return sub_pid;
+
+free_proc:
+    //FIXME: too many exception handle
+    return -1;
+}
+
+int sys_exit(void)
+{
+    struct proc *cur;
+    int fd;
+    cur = get_cur_proc();
+
+    for (fd = 0; fd < NOFILE; fd++) {
+        if (cur->ofile[fd]) {
+            file_close(cur->ofile[fd]);
+            cur->ofile[fd] = NULL;
+        }
+    }
+
+    cur->cwd->ref--;
+    cur->cwd = NULL;
+    cur->root->ref--;
+    cur->root = NULL;
+
+    //FIXME: 需要将reparent所有的child
+
+    cur->state = ZOMBIE;
+    wakeup(cur->parent);
+    yield();
+    panic("zombie never reach\n");
+    return 0;
+}
+
+int sys_wait(void)
+{
+    struct proc *cur, *p;
+    int pid, cnt, i;
+    cur = get_cur_proc();
+
+    while (1) {
+        cnt = 0;
+
+        for (i = 0; i < NPROC; i++) {
+            p = &s_proc_list[i];
+
+            if (p->parent != cur)
+                continue;
+
+            cnt++;
+
+            if (p->state == ZOMBIE) {
+                arch_free_proc(p);
+                pid = p->pid;
+                //FIXME: 这里会有内存泄露？
+                vm_free_pg_dir(get_mmu(), p->pg_dir);
+                p->pid = 0;
+                p->parent = NULL;
+                p->comm[0] = '\0';
+                p->state = UNUSED;
+                return pid;
+            }
+        }
+
+        if (!cnt)
+            return -1;
+
+        sleep(cur);
+    }
+
+    return -1;
+}
+void sleep(void *obj)
+{
+    struct proc *p;
+
+    p = get_cur_proc();
+
+    disable_trap();
+    p->wait_obj = obj;
+    p->state = SLEEPING;
+    enable_trap();
+    yield();
+
+    p->wait_obj = NULL;
+}
+
+void wakeup(void *obj)
+{
+    struct proc *p;
+    int i;
+
+    p = NULL;
+
+    for (i = 0; i < NPROC; i++) {
+        p = &s_proc_list[i];
+
+        if (p->state == SLEEPING && p->wait_obj == obj) {
+            p->state = RUNNABLE;
+        }
+
     }
 }

@@ -3,6 +3,7 @@
 #include "x86_asm.h"
 #include "x86_trap.h"
 #include "keyboard.h"
+#include "vfs.h"
 
 static u8 shiftcode[256] = {
     [0x1D] = CTL,
@@ -126,6 +127,10 @@ extern void vgaputc(int c);
 #define BACKSPACE 0x100
 static void kbd_intr(struct trap_frame *frame)
 {
+
+    console_intr();
+
+#if 0
     int c;
 
     while ((c = kbdgetc()) >= 0) {
@@ -141,7 +146,19 @@ static void kbd_intr(struct trap_frame *frame)
                 vgaputc(c);
         }
     }
+
+#endif
 }
+void console_putc(int c)
+{
+    vgaputc(c);
+}
+
+int console_getc()
+{
+    return kbdgetc();
+}
+
 
 int kbd_init()
 {

@@ -22,7 +22,7 @@ int sys_setup()
 }
 
 struct file file_cached[NFILE];
-/* struct devsw devsw[NDEV]; */
+struct devsw devsw[NDEV];
 
 struct file* file_alloc()
 {

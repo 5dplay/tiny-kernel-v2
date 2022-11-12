@@ -94,6 +94,7 @@ static struct inode* tinyfs_geti(struct superblock *superb, u32 idx)
     if (!item && slot) {
         item = slot;
         tmp = &item->parent;
+        tmp->ref = 1;
         tmp->dev = superb->dev;
         tmp->idx = idx;
         tmp->major = 0;

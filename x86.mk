@@ -1,7 +1,7 @@
 arch = x86
 ARCH_DIR=arch/x86
 
-CFLAGS += -m32 -fno-pic -fno-omit-frame-pointer -fno-stack-protector -fno-pie
+CFLAGS += -m32 -fno-pic -fno-omit-frame-pointer -fno-stack-protector -fno-pie  -fcf-protection=none -mmanual-endbr
 CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include
 LDFLAGS += -m elf_i386 -r
 USR_LDFLAGS = -m elf_i386

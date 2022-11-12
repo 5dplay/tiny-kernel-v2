@@ -197,7 +197,6 @@ TK_STATUS x86_page_free_pg_dir(struct x86_vmm *this, uaddr pg_dir)
     return TK_STATUS_SUCCESS;
 }
 
-#if 0
 int x86_page_clone_pg_dir(struct x86_vmm *this, uaddr dst, uaddr src, uaddr va)
 {
     uaddr start, paddr, new_vaddr;
@@ -214,7 +213,7 @@ int x86_page_clone_pg_dir(struct x86_vmm *this, uaddr dst, uaddr src, uaddr va)
         } else if (*pte_val & PAGING_BIT_P) {
             paddr = PTE_ADDR(*pte_val);
             flags = PTE_FLAGS(*pte_val);
-            new_vaddr = (uaddr)(g_mm_initialized ? page_alloc() : bootm_alloc());
+            new_vaddr = (uaddr)page_alloc();
             memcpy((void *)new_vaddr, (void *)phy_to_virt(paddr), PAGE_SIZE);
             x86_page_map(this, dst, start, virt_to_phy(new_vaddr), PAGE_SIZE, flags);
         }
@@ -223,4 +222,3 @@ int x86_page_clone_pg_dir(struct x86_vmm *this, uaddr dst, uaddr src, uaddr va)
 
     return 0;
 }
-#endif

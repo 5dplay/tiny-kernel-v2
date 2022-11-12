@@ -8,6 +8,7 @@
 #include "proc.h"
 #include "bio.h"
 #include "block_dev.h"
+#include "vfs.h"
 
 void kernel_main()
 {
@@ -55,6 +56,8 @@ void kernel_main()
     block_dev_init();
 
     drv_init();
+
+    console_init();
 
     proc_init();
 

@@ -2,6 +2,7 @@
 #include "type.h"
 #include "vm.h"
 #include "memlayout.h"
+#include "string.h"
 
 #include "x86_asm.h"
 #include "x86_mm.h"
@@ -22,6 +23,7 @@ uaddr vm_alloc_pg_dir(vmm *vm)
     uaddr pg_dir;
 
     pg_dir = (uaddr)page_alloc();
+    memset((void *)pg_dir, 0x0, PAGE_SIZE);
 
     return pg_dir;
 }
@@ -65,4 +67,9 @@ uint vm_resize(vmm *vm, uaddr pg_dir, uint old_sz, uint new_sz)
 TK_STATUS vm_prog_load(vmm *vm, struct vm_prog_load_params *params)
 {
     return x86_page_prog_load((struct x86_vmm *)vm, params);
+}
+
+TK_STATUS vm_clone_pg_dir(vmm *vm, uaddr dst_pg_dir, uaddr src_pg_dir, uaddr va_end)
+{
+    return x86_page_clone_pg_dir((struct x86_vmm *)vm, dst_pg_dir, src_pg_dir, va_end);
 }

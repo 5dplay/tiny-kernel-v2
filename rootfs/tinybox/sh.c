@@ -1,11 +1,13 @@
 #include "include/sys_call.h"
 #include "include/libc.h"
 
-int main(void)
+int main(int pargc, char *pargv[])
 {
     char buf[128];
     char *argv[5], *s, *p;
     int i, argc, pid;
+
+    printf("sh init success!\n");
 
     while (1) {
         printf("$ ");
@@ -13,6 +15,8 @@ int main(void)
         gets(buf, sizeof(buf));
         i = strlen(buf);
         buf[i - 1] = '\0';
+        printf("your input: %s\n", buf);
+        continue;
         //目前简单处理，读取cmd，参数最多为3个
         argc = 0;
         s = &buf[0];

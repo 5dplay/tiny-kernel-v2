@@ -1,7 +1,7 @@
 #include "include/sys_call.h"
 #include "include/libc.h"
 
-char *argv[] = {"sh", 0};
+char *pargv[] = {"sh", 0};
 
 int main(int argc, char *argv[])
 {
@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
     int pid, wpid;
     fd = open("/console", 0);
 
-    while (1);
 
     if (fd < 0) {
         mknod("/console", 1, 1);
@@ -17,18 +16,26 @@ int main(int argc, char *argv[])
     }
 
     if (fd != stdin)
-        test("sth wrong with open /console");
+        exit();
 
     dup(stdin);
     dup(stdin);
 
-    while (1) {
+    printf("init success!\n");
+
+    do {
         pid = fork();
+        printf("fork return! pid = %d\n", pid);
 
         if (pid == 0) {
-            exec("sh", argv);
-            printf("execv sh exit\n");
+            printf("i am child\n");
+#if 1
+            exec("/sh", pargv);
+#endif
+            printf("exec sh exit\n");
             exit();
+
+            while (1);
         } else {
             printf("i am parent\n");
             printf("try to wait %d\n", pid);
@@ -38,6 +45,7 @@ int main(int argc, char *argv[])
             while ((wpid = wait()) >= 0 && wpid != pid)
                 printf("zombie!\n");
         }
+    } while (0);
 
-    }
+    while (1);
 }

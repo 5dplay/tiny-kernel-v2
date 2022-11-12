@@ -18,6 +18,8 @@ struct proc {
     int pid;                            /* 进程id */
     struct proc *parent;                /* 父进程id */
 
+    void *wait_obj;
+
     /* fs start */
     struct file *ofile[NOFILE];
     struct inode *cwd;
@@ -40,12 +42,16 @@ TK_STATUS proc_init();
 
 /* 各arch独自定义 -- start */
 void arch_init_proc(struct proc *p);
+void arch_free_proc(struct proc *p);
 
 /* 首个用户进程各arch最终初始化 */
 void usr_init_proc(struct proc *p);
 
 /* for do_exec */
 void usr_exec_proc(struct proc *p, uaddr ep, u32 sp);
+
+/* for do_fork */
+int trap_fork_proc(struct proc *dst, struct proc *src);
 
 void join(struct proc *p);
 
@@ -75,5 +81,9 @@ void proc_free(struct proc *p);
 * @return 失败 == NULL
 */
 struct proc* get_cur_proc();
+
+void sleep(void *obj);
+
+void wakeup(void *obj);
 
 #endif

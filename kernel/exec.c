@@ -55,7 +55,7 @@ static int do_exec(char *path, char **argv)
     struct inode *ip;
     vmm *vm;
     uint cnt, i, off, sz;
-    int pg_dir, old_pg_dir;
+    uaddr pg_dir, old_pg_dir;
     struct elfhdr elf;
     struct vm_prog_load_params params;
     struct proghdr ph;
@@ -162,7 +162,6 @@ static int do_exec(char *path, char **argv)
 
     switch_uvm(p);
     vm_free_pg_dir(vm, old_pg_dir);
-    printk("%s: leave\n", __func__);
     return 0;
 //FIXME: 完善相关的内容
 free_vm:

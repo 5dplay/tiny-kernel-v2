@@ -6,9 +6,11 @@
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
 #if 0
-extern int sys_fork(void);
-extern int sys_wait(void);
-extern int sys_exit(void);
+extern int sys_sleep(void);
+#endif
+
+extern int sys_setup(void);
+extern int sys_exec(void);
 extern int sys_dup(void);
 extern int sys_open(void);
 extern int sys_close(void);
@@ -16,13 +18,15 @@ extern int sys_read(void);
 extern int sys_write(void);
 extern int sys_mknod(void);
 extern int sys_fstat(void);
-extern int sys_sleep(void);
-#endif
-
-extern int sys_setup(void);
-extern int sys_exec(void);
+extern int sys_fork(void);
+extern int sys_wait(void);
+extern int sys_exit(void);
 static int (*sys_calls[])(void) = {
 #if 0
+    [SYS_sleep] = sys_sleep,
+#endif
+    [SYS_setup] = sys_setup,
+    [SYS_exec] = sys_exec,
     [SYS_dup] = sys_dup,
     [SYS_open] = sys_open,
     [SYS_close] = sys_close,
@@ -33,11 +37,6 @@ static int (*sys_calls[])(void) = {
     [SYS_fork] = sys_fork,
     [SYS_wait] = sys_wait,
     [SYS_exit] = sys_exit,
-    [SYS_test] = sys_test,
-    [SYS_sleep] = sys_sleep,
-#endif
-    [SYS_setup] = sys_setup,
-    [SYS_exec] = sys_exec,
 };
 
 int sys_call(int idx)
