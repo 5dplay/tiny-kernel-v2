@@ -28,6 +28,7 @@
 #include "arm_trap.h"
 #include "common.h"
 #include "mini_uart.h"
+#include "vfs.h"
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -59,7 +60,7 @@ void mini_uart_trap_handler(struct trap_frame *tf)
     if (!AUX_MU_IIR_RX(irq_status))
         return ;
 
-    mini_uart_getc();
+    console_intr();
 }
 
 /**
@@ -159,6 +160,31 @@ void mini_uart_getc()
     }
 }
 
+int mini_uart_getc_console()
+{
+    int ch;
+    u32 val;
+
+    val = *AUX_MU_STAT;
+
+    if (!AUX_MU_STAT_HAS_RX(val))
+        return -1;
+
+    ch = (char)(*AUX_MU_IO);
+
+    switch (ch) {
+        case '\x7f':
+            mini_uart_send(0x8);
+            mini_uart_send(' ');
+            mini_uart_send(0x8);
+            return ch;
+
+        case '\r':
+        default:
+            return ch;
+    }
+}
+
 /**
  * Display a string
  */
@@ -173,3 +199,12 @@ void mini_uart_puts(const char *s)
     }
 }
 
+void console_putc(int c)
+{
+    mini_uart_send(c);
+}
+
+int console_getc()
+{
+    return mini_uart_getc_console();
+}

@@ -1,7 +1,7 @@
 arch = arm
 ARCH_DIR = arch/arm
 
-CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include -march=armv7-a -mfpu=vfp -msoft-float -marm
+CFLAGS += -I$(ROOT_DIR)/$(ARCH_DIR)/include -march=armv7-a -mfpu=vfp -msoft-float -marm -fno-omit-frame-pointer -mabi=aapcs-linux
 LDFLAGS += -r
 USR_LDFLAGS =
 SUBDIRS += $(ARCH_DIR)

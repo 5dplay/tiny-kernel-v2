@@ -69,7 +69,7 @@ static int do_exec(char *path, char **argv)
     ip = namei(path);
 
     if (ip == NULL) {
-        printk("%s: %s not found.\n", __func__, path);
+        panic("%s: %s not found.\n", __func__, path);
         return -1;
     }
 

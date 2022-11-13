@@ -1,6 +1,7 @@
 #include "indexfs.h"
 #include "proc.h"
 #include "string.h"
+#include "common.h"
 
 // Copy the next path element from path into name.
 // Return a pointer to the element following the copied one.
@@ -129,8 +130,8 @@ struct inode* do_createi(char *path, u16 type, u16 major, u16 minor)
     }
 
     data_linki(dp->superb, dp, ip, name, strlen(name));
-    meta_writei(dp->superb, dp);
     meta_writei(ip->superb, ip);
+    meta_writei(dp->superb, dp);
 
     return ip;
 }

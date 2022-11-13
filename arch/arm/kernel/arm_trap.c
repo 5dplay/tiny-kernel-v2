@@ -1,5 +1,6 @@
 #include "memlayout.h"
 #include "common.h"
+#include "string.h"
 #include "proc.h"
 #include "sys_call.h"
 #include "trap.h"
@@ -68,7 +69,8 @@ void do_software_interrupt(struct trap_frame *tf)
     p = get_cur_proc();
     a = (struct arm_proc *)p->arch_proc;
 
-    a->tf->r0 = sys_call(tf->r7);
+    /* printk("%s: a->tf %p ?= arg_tf %p\n", __func__, a->tf, tf); */
+    a->tf->r0 = sys_call(a->tf->r7);
 }
 
 int arg_int(int n, int *dst)

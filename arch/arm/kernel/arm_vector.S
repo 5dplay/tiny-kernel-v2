@@ -48,7 +48,6 @@ __trap_stack_top: .word trap_stack_top
     ldr lr, [r0]
     ldr r0, [r13]
     add r13, #4
-
 .endm
 
 .macro save_user_regs
@@ -63,9 +62,21 @@ __trap_stack_top: .word trap_stack_top
     mov r0, sp
 .endm
 
+.macro save_user_regs_svc
+    sub sp, #S_FRAME_SIZE
+    stmia sp, {r0 - r12}                @ store multi reg to [Rn]
+    add r5, sp, #S_SP
+    mov r2, lr
+    mrs r3, spsr
+    stmia r5!, {sp, lr}^
+    stmia r5!, {r2-r3}
+    mov r0, sp
+.endm
+
 .macro restore_user_regs_svc
     ldmia sp, {r0 - lr}^
-    mov r0, r10
+    ldr lr, [sp, #S_PSR]
+    msr spsr, lr
     ldr lr, [sp, #S_PC]
     add sp, #S_FRAME_SIZE
     movs pc, lr
@@ -98,8 +109,9 @@ __trap_undef_instruction:
     bl do_undef_instruction
 
 __trap_software_interrupt:
-    setup_trap_stack_svc
-    save_user_regs
+    @ setup_trap_stack_svc
+    @ save_user_regs
+    save_user_regs_svc
     bl do_software_interrupt
 trapret:
     restore_user_regs_svc

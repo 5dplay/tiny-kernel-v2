@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include "include/sys_call.h"
 #include "include/libc.h"
 
@@ -9,7 +10,7 @@ static void putc(int fd, char c)
 static void printint(int fd, int xx, int base, int sgn)
 {
     static char digits[] = "0123456789ABCDEF";
-    char buf[16];
+    char buf[16] = {0};
     int i, neg;
     unsigned int x;
 
@@ -38,13 +39,13 @@ static void printint(int fd, int xx, int base, int sgn)
 // Print to the given fd. Only understands %d, %x, %p, %s.
 void printf(const char *fmt, ...)
 {
-    char *s;
-    int c, i, state, fd;
-    unsigned int *ap;
+    char *s, char_tmp;
+    int c, i, state, fd, tmp;
+    va_list args;
 
     state = 0;
     fd = stdout;
-    ap = (unsigned int*)(void*)&fmt + 1;
+    va_start(args, fmt);
 
     for (i = 0; fmt[i]; i++) {
         c = fmt[i] & 0xff;
@@ -56,35 +57,48 @@ void printf(const char *fmt, ...)
                 putc(fd, c);
             }
         } else if (state == '%') {
-            if (c == 'd') {
-                printint(fd, *ap, 10, 1);
-                ap++;
-            } else if (c == 'x' || c == 'p') {
-                printint(fd, *ap, 16, 0);
-                ap++;
-            } else if (c == 's') {
-                s = (char*)*ap;
-                ap++;
+            switch (c) {
+                case 'd':
+                    tmp = va_arg(args, int);
+                    printint(fd, tmp, 10, 1);
+                    break;
 
-                if (s == 0)
-                    s = "(null)";
+                case 'x':
+                case 'p':
+                    tmp = va_arg(args, int);
+                    printint(fd, tmp, 16, 1);
+                    break;
 
-                while (*s != 0) {
-                    putc(fd, *s);
-                    s++;
-                }
-            } else if (c == 'c') {
-                putc(fd, *ap);
-                ap++;
-            } else if (c == '%') {
-                putc(fd, c);
-            } else {
-                // Unknown % sequence.  Print it to draw attention.
-                putc(fd, '%');
-                putc(fd, c);
+                case 's':
+                    s = va_arg(args, char *);
+
+                    if (s == 0)
+                        s = "(null)";
+
+                    while (*s != 0) {
+                        putc(fd, *s);
+                        s++;
+                    }
+
+                    break;
+
+                case 'c':
+                    char_tmp = va_arg(args, int);
+                    putc(fd, char_tmp);
+                    break;
+
+                case '%':
+                    putc(fd, c);
+                    break;
+
+                default:
+                    putc(fd, '%');
+                    putc(fd, c);
             }
 
             state = 0;
         }
     }
+
+    va_end(args);
 }

@@ -118,6 +118,7 @@ TK_STATUS arm_page_map(struct arm_vmm *this, struct page_map_info *info);
 struct vm_prog_load_params;
 TK_STATUS arm_page_prog_load(struct arm_vmm *this, struct vm_prog_load_params *params);
 TK_STATUS arm_page_free_pg_dir(struct arm_vmm *this, uaddr pg_dir);
+int arm_page_clone_pg_dir(struct arm_vmm *this, uaddr dst, uaddr src, uaddr va);
 
 int __arm_vm_resize_inc(struct arm_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz);
 int __arm_vm_resize_dec(struct arm_vmm *this, uaddr pg_dir, uint old_sz, uint new_sz);

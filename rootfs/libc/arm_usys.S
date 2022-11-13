@@ -4,8 +4,10 @@
 #define SYSCALL(name) \
   .globl name; \
   name: \
+    push {r7}; \
     mov r7, $SYS_ ## name; \
     svc #0; \
+    pop {r7}; \
     bx lr
 
 SYSCALL(fork)

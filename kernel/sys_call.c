@@ -43,11 +43,14 @@ int sys_call(int idx)
 {
     struct proc *p = get_cur_proc();
 
+    /* printk("pid:%d, comm:%s: sys call %d\n", p->pid, p->comm, idx); */
+
     if (idx > 0 && idx < NELEM(sys_calls) && sys_calls[idx])
         return sys_calls[idx]();
     else {
         printk("pid:%d, comm:%s: unknown sys call %d\n",
                p->pid, p->comm, idx);
+        panic("%s: hang\n", __func__);
         return -1;
     }
 }

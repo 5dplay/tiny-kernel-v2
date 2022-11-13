@@ -29,9 +29,7 @@ int main(int argc, char *argv[])
 
         if (pid == 0) {
             printf("i am child\n");
-#if 1
             exec("/sh", pargv);
-#endif
             printf("exec sh exit\n");
             exit();
 

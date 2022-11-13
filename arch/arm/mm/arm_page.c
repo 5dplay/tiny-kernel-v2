@@ -89,7 +89,7 @@ TK_STATUS arm_page_map(struct arm_vmm *this, struct page_map_info *info)
 
     paddr_end = paddr + size;
 
-    printk("%s: map %x -> %x, size = 0x%x\n", __func__, vaddr, paddr, size);
+    // printk("%s: map %x -> %x, size = 0x%x\n", __func__, vaddr, paddr, size);
 
     while (paddr < paddr_end) {
         if (s_pg_map_helper(this, pg_dir, vaddr, paddr, flags) < 0) {
@@ -206,11 +206,12 @@ TK_STATUS arm_page_free_pg_dir(struct arm_vmm *this, uaddr pg_dir)
 
     return TK_STATUS_SUCCESS;
 }
-#if 0
+
 int arm_page_clone_pg_dir(struct arm_vmm *this, uaddr dst, uaddr src, uaddr va)
 {
     uaddr start, paddr, new_vaddr;
     u32 *pte_val, flags;
+    struct page_map_info info;
 
     start = 0;
 
@@ -220,16 +221,21 @@ int arm_page_clone_pg_dir(struct arm_vmm *this, uaddr dst, uaddr src, uaddr va)
         if (pte_val == NULL) {
             //跳到下一个页表
             start = GEN_PDE_ADDR(PDE_IDX(start) + 1, 0, 0) - PAGE_SIZE;
-        } else if (*pte_val & PAGING_BIT_P) {
+        } else if (*pte_val & PTE_DEF_FLAGS) {
             paddr = PTE_ADDR(*pte_val);
             flags = PTE_FLAGS(*pte_val);
-            new_vaddr = (uaddr)(g_mm_initialized ? page_alloc() : bootm_alloc());
+            new_vaddr = (uaddr)page_alloc();
             memcpy((void *)new_vaddr, (void *)phy_to_virt(paddr), PAGE_SIZE);
-            arm_page_map(this, dst, start, virt_to_phy(new_vaddr), PAGE_SIZE, flags);
+
+            info.pg_dir = dst;
+            info.vaddr = start;
+            info.paddr = virt_to_phy(new_vaddr);
+            info.size = PAGE_SIZE;
+            info.flags = flags;
+            arm_page_map(this, &info);
         }
 
     }
 
     return 0;
 }
-#endif

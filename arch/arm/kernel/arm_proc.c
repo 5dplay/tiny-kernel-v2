@@ -13,6 +13,18 @@ extern void trapret(void);
 extern char arm_vector_start[], arm_vector_end[];
 #define ARM_VECTOR_BASE 0xFFFF0000
 
+#if 0
+void *get_cur_proc_kstack_top()
+{
+    struct proc *p;
+    struct arm_proc *a;
+
+    p = get_cur_proc();
+    a = (struct arm_proc *)p->arch_proc;
+    return a->kstack + PAGE_SIZE;
+}
+#endif
+
 void arch_init_proc(struct proc *p)
 {
     u8 *sp;
@@ -30,11 +42,9 @@ void arch_init_proc(struct proc *p)
     /* trap frame */
     sp -= sizeof(*a->tf);
     a->tf = (struct trap_frame *)sp;
-    /* push {fp, lr} ; lr == trapret */
+    /* push {lr} ; lr == trapret */
     sp -= sizeof(uaddr);
     *(uaddr *)sp = (uaddr)trapret;
-    sp -= sizeof(uaddr);
-    *(uaddr *)sp = (uaddr)(a->tf);
 
     sp -= sizeof(*a->ctx);
     a->ctx = (struct arm_context *)sp;
@@ -82,12 +92,20 @@ void join(struct proc *p)
 
     a = (struct arm_proc *)p->arch_proc;
     switch_ctx(&g_arm_ctx_sched, a->ctx);
-    printk("join finish\n");
 }
 
-void yield(struct proc *p)
+void yield()
 {
-    panic("%s: TO BE DONE!\n", __func__);
+    struct proc *p;
+    struct arm_proc *a;
+
+    p = get_cur_proc();
+
+    if (p == NULL || sizeof(*a) > sizeof(p->arch_proc))
+        panic("p = %p, sizeof(arm_proc) = %d\n", p, sizeof(*a));
+
+    a = (struct arm_proc *)p->arch_proc;
+    switch_ctx(&a->ctx, g_arm_ctx_sched);
 }
 
 void switch_uvm(struct proc *p)
@@ -111,4 +129,27 @@ void usr_exec_proc(struct proc *p, uaddr ep, u32 sp)
     a = (struct arm_proc *)p->arch_proc;
     a->tf->pc = ep;
     a->tf->sp = sp;
+}
+
+void arch_free_proc(struct proc *p)
+{
+    struct arm_proc *x;
+
+    if (p == NULL || sizeof(struct arm_proc) > sizeof(p->arch_proc))
+        panic("p = %p, sizeof(arm_proc) = %d\n", p, sizeof(struct arm_proc));
+
+    x = (struct arm_proc *)p->arch_proc;
+    page_free(x->kstack);
+}
+
+int trap_fork_proc(struct proc *dst, struct proc *src)
+{
+    struct arm_proc *dx, *sx;
+
+    dx = (struct arm_proc *)dst->arch_proc;
+    sx = (struct arm_proc *)src->arch_proc;
+    memcpy(dx->tf, sx->tf, sizeof(*dx->tf));
+    //fork出来的子进程返回0
+    dx->tf->r0 = 0;
+    return 0;
 }

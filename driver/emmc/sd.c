@@ -31,6 +31,12 @@
 #include "limits.h"
 #include "sd.h"
 
+#ifndef EMMC_DEBUG
+#define emmc_printk(...)
+#else
+#define emmc_printk printk
+#endif
+
 #define EMMC_ARG2           ((volatile unsigned int*)(MMIO_BASE+0x00300000))
 #define EMMC_BLKSIZECNT     ((volatile unsigned int*)(MMIO_BASE+0x00300004))
 #define EMMC_ARG1           ((volatile unsigned int*)(MMIO_BASE+0x00300008))
@@ -64,6 +70,8 @@
 #define CMD_STOP_TRANS      0x0C030000
 #define CMD_READ_SINGLE     0x11220010
 #define CMD_READ_MULTI      0x12220032
+#define CMD_WRITE_SINGLE    0x18220000
+#define CMD_WRITE_MULTI     0x19220022
 #define CMD_SET_BLOCKCNT    0x17020000
 #define CMD_APP_CMD         0x37000000
 #define CMD_SET_BUS_WIDTH   (0x06020000|CMD_NEED_APP)
@@ -72,6 +80,7 @@
 
 // STATUS register settings
 #define SR_READ_AVAILABLE   0x00000800
+#define SR_WRITE_AVAILABLE  0x00000400
 #define SR_DAT_INHIBIT      0x00000002
 #define SR_CMD_INHIBIT      0x00000001
 #define SR_APP_CMD          0x00000020
@@ -80,6 +89,8 @@
 #define INT_DATA_TIMEOUT    0x00100000
 #define INT_CMD_TIMEOUT     0x00010000
 #define INT_READ_RDY        0x00000020
+#define INT_WRITE_RDY       0x00000010
+#define INT_DATA_DONE       0x00000002
 #define INT_CMD_DONE        0x00000001
 
 #define INT_ERROR_MASK      0x017E8000
@@ -124,7 +135,7 @@ unsigned long sd_scr[2], sd_ocr, sd_rca, sd_err, sd_hv;
  */
 int sd_status(unsigned int mask)
 {
-    int cnt = 500000;
+    int cnt = 1000000;
 
     while ((*EMMC_STATUS & mask) && !(*EMMC_INTERRUPT & INT_ERROR_MASK) && cnt--) wait_msec_st(1);
 
@@ -167,7 +178,7 @@ int sd_cmd(unsigned int code, unsigned int arg)
         r = sd_cmd(CMD_APP_CMD | (sd_rca ? CMD_RSPNS_48 : 0), sd_rca);
 
         if (sd_rca && !r) {
-            printk("ERROR: failed to send SD APP command\n");
+            emmc_printk("ERROR: failed to send SD APP command\n");
             sd_err = SD_ERROR;
             return 0;
         }
@@ -176,12 +187,12 @@ int sd_cmd(unsigned int code, unsigned int arg)
     }
 
     if (sd_status(SR_CMD_INHIBIT)) {
-        printk("ERROR: EMMC busy\n");
+        emmc_printk("ERROR: EMMC busy\n");
         sd_err = SD_TIMEOUT;
         return 0;
     }
 
-    printk("EMMC: Sending command %08X arg %08X\n", code, arg);
+    emmc_printk("EMMC: Sending command %08X arg %08X\n", code, arg);
     *EMMC_INTERRUPT = *EMMC_INTERRUPT;
     *EMMC_ARG1 = arg;
     *EMMC_CMDTM = code;
@@ -190,7 +201,7 @@ int sd_cmd(unsigned int code, unsigned int arg)
     else if (code == CMD_SEND_IF_COND || code == CMD_APP_CMD) wait_msec_st(100);
 
     if ((r = sd_int(INT_CMD_DONE))) {
-        printk("ERROR: failed to send EMMC command error = %d\n", r);
+        emmc_printk("ERROR: failed to send EMMC command error = %d\n", r);
         sd_err = r;
         return 0;
     }
@@ -225,7 +236,7 @@ int sd_readblock(unsigned int lba, unsigned char *buffer, unsigned int num)
 
     if (num < 1) num = 1;
 
-    printk("sd_readblock lba %08X num %08X\n", lba, num);
+    emmc_printk("sd_readblock lba %08X num %08X\n", lba, num);
 
     if (sd_status(SR_DAT_INHIBIT)) {
         sd_err = SD_TIMEOUT;
@@ -257,7 +268,7 @@ int sd_readblock(unsigned int lba, unsigned char *buffer, unsigned int num)
         }
 
         if ((r = sd_int(INT_READ_RDY))) {
-            printk("\rERROR: Timeout waiting for ready to read\n");
+            emmc_printk("\rERROR: Timeout waiting for ready to read\n");
             sd_err = r;
             return 0;
         }
@@ -270,7 +281,71 @@ int sd_readblock(unsigned int lba, unsigned char *buffer, unsigned int num)
 
     if (num > 1 && !(sd_scr[0] & SCR_SUPP_SET_BLKCNT) && (sd_scr[0] & SCR_SUPP_CCS)) sd_cmd(CMD_STOP_TRANS, 0);
 
-    printk("%s: return\n", __func__);
+    emmc_printk("%s: return\n", __func__);
+    return sd_err != SD_OK || c != num ? 0 : num * 512;
+}
+
+/**
+ * write a block to the sd card and return the number of bytes written
+ * returns 0 on error.
+ */
+int sd_writeblock(unsigned char *buffer, unsigned int lba, unsigned int num)
+{
+    int r, c = 0, d;
+
+    if (num < 1) num = 1;
+
+    emmc_printk("sd_writeblock lba %08X num %08X\n", lba, num);
+
+    if (sd_status(SR_DAT_INHIBIT | SR_WRITE_AVAILABLE)) {
+        sd_err = SD_TIMEOUT;
+        return 0;
+    }
+
+    unsigned int *buf = (unsigned int *)buffer;
+
+    if (sd_scr[0] & SCR_SUPP_CCS) {
+        if (num > 1 && (sd_scr[0] & SCR_SUPP_SET_BLKCNT)) {
+            sd_cmd(CMD_SET_BLOCKCNT, num);
+
+            if (sd_err) return 0;
+        }
+
+        *EMMC_BLKSIZECNT = (num << 16) | 512;
+        sd_cmd(num == 1 ? CMD_WRITE_SINGLE : CMD_WRITE_MULTI, lba);
+
+        if (sd_err) return 0;
+    } else {
+        *EMMC_BLKSIZECNT = (1 << 16) | 512;
+    }
+
+    while (c < num) {
+        if (!(sd_scr[0] & SCR_SUPP_CCS)) {
+            sd_cmd(CMD_WRITE_SINGLE, (lba + c) * 512);
+
+            if (sd_err) return 0;
+        }
+
+        if ((r = sd_int(INT_WRITE_RDY))) {
+            emmc_printk("\rERROR: Timeout waiting for ready to write\n");
+            sd_err = r;
+            return 0;
+        }
+
+        for (d = 0; d < 128; d++) *EMMC_DATA = buf[d];
+
+        c++;
+        buf += 128;
+    }
+
+    if ((r = sd_int(INT_DATA_DONE))) {
+        emmc_printk("\rERROR: Timeout waiting for data done\n");
+        sd_err = r;
+        return 0;
+    }
+
+    if (num > 1 && !(sd_scr[0] & SCR_SUPP_SET_BLKCNT) && (sd_scr[0] & SCR_SUPP_CCS)) sd_cmd(CMD_STOP_TRANS, 0);
+
     return sd_err != SD_OK || c != num ? 0 : num * 512;
 }
 
@@ -285,7 +360,7 @@ int sd_clk(unsigned int f)
     while ((*EMMC_STATUS & (SR_CMD_INHIBIT | SR_DAT_INHIBIT)) && cnt--) wait_msec_st(1);
 
     if (cnt <= 0) {
-        printk("ERROR: timeout waiting for inhibit flag\n");
+        emmc_printk("ERROR: timeout waiting for inhibit flag\n");
         return SD_ERROR;
     }
 
@@ -333,7 +408,7 @@ int sd_clk(unsigned int f)
         s = 0;
     }
 
-    printk("sd_clk divisor %08X, shift %08X\n", d, s);
+    emmc_printk("sd_clk divisor %08X, shift %08X\n", d, s);
 
     if (sd_hv > HOST_SPEC_V2) h = (d & 0x300) >> 2;
 
@@ -347,7 +422,7 @@ int sd_clk(unsigned int f)
     while (!(*EMMC_CONTROL1 & C1_CLK_STABLE) && cnt--) wait_msec_st(10);
 
     if (cnt <= 0) {
-        printk("ERROR: failed to get stable clock\n");
+        emmc_printk("ERROR: failed to get stable clock\n");
         return SD_ERROR;
     }
 
@@ -360,14 +435,15 @@ static void emmc_rw(struct block_buf *buf)
         return ;
 
     if (buf->flags & BLOCK_FLAG_DIRTY) {
-        printk("%s: write TO BE DONE\n", __func__);
+        sd_writeblock(buf->data, buf->idx, 1);
     } else {
         sd_readblock(buf->idx, buf->data, 1);
-        /* TODO: 改为中断模式获取 */
-        bio_pop();
-        buf->flags |= BLOCK_FLAG_VALID;
-        buf->flags &= ~BLOCK_FLAG_DIRTY;
     }
+
+    /* TODO: 改为中断模式获取 */
+    bio_pop();
+    buf->flags |= BLOCK_FLAG_VALID;
+    buf->flags &= ~BLOCK_FLAG_DIRTY;
 }
 
 /**
@@ -413,7 +489,7 @@ int sd_init()
     *GPPUDCLK1 = 0;
 
     sd_hv = (*EMMC_SLOTISR_VER & HOST_SPEC_NUM) >> HOST_SPEC_NUM_SHIFT;
-    printk("EMMC: GPIO set up\n");
+    emmc_printk("EMMC: GPIO set up\n");
     // Reset the card.
     *EMMC_CONTROL0 = 0;
     *EMMC_CONTROL1 |= C1_SRST_HC;
@@ -424,11 +500,11 @@ int sd_init()
     } while ((*EMMC_CONTROL1 & C1_SRST_HC) && cnt--);
 
     if (cnt <= 0) {
-        printk("ERROR: failed to reset EMMC\n");
+        emmc_printk("ERROR: failed to reset EMMC\n");
         return SD_ERROR;
     }
 
-    printk("EMMC: reset OK\n");
+    emmc_printk("EMMC: reset OK\n");
     *EMMC_CONTROL1 |= C1_CLK_INTLEN | C1_TOUNIT_MAX;
     wait_msec_st(10);
 
@@ -452,21 +528,21 @@ int sd_init()
     while (!(r & ACMD41_CMD_COMPLETE) && cnt--) {
         wait_cycles(400);
         r = sd_cmd(CMD_SEND_OP_COND, ACMD41_ARG_HC);
-        printk("EMMC: CMD_SEND_OP_COND returned ");
+        emmc_printk("EMMC: CMD_SEND_OP_COND returned ");
 
         if (r & ACMD41_CMD_COMPLETE)
-            printk("COMPLETE ");
+            emmc_printk("COMPLETE ");
 
         if (r & ACMD41_VOLTAGE)
-            printk("VOLTAGE ");
+            emmc_printk("VOLTAGE ");
 
         if (r & ACMD41_CMD_CCS)
-            printk("CCS ");
+            emmc_printk("CCS ");
 
-        printk("%08X\n", r);
+        emmc_printk("%08X\n", r);
 
         if (sd_err != SD_TIMEOUT && sd_err != SD_OK) {
-            printk("ERROR: EMMC ACMD41 returned error\n");
+            emmc_printk("ERROR: EMMC ACMD41 returned error\n");
             return sd_err;
         }
     }
@@ -480,7 +556,7 @@ int sd_init()
     sd_cmd(CMD_ALL_SEND_CID, 0);
 
     sd_rca = sd_cmd(CMD_SEND_REL_ADDR, 0);
-    printk("EMMC: CMD_SEND_REL_ADDR returned %08X %08X\n", sd_rca >> 32, sd_rca);
+    emmc_printk("EMMC: CMD_SEND_REL_ADDR returned %08X %08X\n", sd_rca >> 32, sd_rca);
 
     if (sd_err) return sd_err;
 
@@ -520,15 +596,15 @@ int sd_init()
     }
 
     // add software flag
-    printk("EMMC: supports ");
+    emmc_printk("EMMC: supports ");
 
     if (sd_scr[0] & SCR_SUPP_SET_BLKCNT)
-        printk("SET_BLKCNT ");
+        emmc_printk("SET_BLKCNT ");
 
     if (ccs)
-        printk("CCS ");
+        emmc_printk("CCS ");
 
-    printk("\n");
+    emmc_printk("\n");
     sd_scr[0] &= ~SCR_SUPP_CCS;
     sd_scr[0] |= ccs;
 

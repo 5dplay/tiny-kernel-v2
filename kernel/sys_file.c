@@ -17,16 +17,24 @@ int sys_open(void)
     int fd, mode;
     struct file *f;
     struct inode *ip;
+    struct proc *p;
 
     if (arg_ptr(0, (void **)&path) || arg_int(1, &mode)) {
         printk("%s: args err!\n", __func__);
         return -1;
     }
 
+    p = get_cur_proc();
+    printk("pid:%d, comm:%s: open path %s, mode = %X\n", p->pid, p->comm, path, mode);
     /*
         1. 先寻找到文件路径对应的inode节点
         2. 申请新的文件描述符,并且将inode节点信息填入,更新当前进程的文件描述符表
     */
+
+    if (path == NULL) {
+        printk("%s: path is null!\n", __func__);
+        return -1;
+    }
 
     if (mode & O_CREATE) {
         ip = do_createi(path, T_FILE, 0, 0);
@@ -117,6 +125,7 @@ int sys_write(void)
 
     f = proc_get_file(fd);
 
+    /* printk("%c", *p); */
     if (f == NULL)
         return -1;
 

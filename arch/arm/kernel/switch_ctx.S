@@ -8,8 +8,6 @@ switch_ctx:
     bx lr
 
 arm_forkret_entry:
-    @ push {fp, lr}
     bl forkret
-    pop {fp, lr}
-    mov sp, fp
+    pop {lr}
     bx lr

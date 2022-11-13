@@ -134,7 +134,7 @@ static struct inode* tinyfs_alloci(struct superblock *superb, u16 type, u16 majo
             ip = tinyfs_geti(superb, i);
             tinyfs_meta_readi(superb, ip);
 #if 0
-            printk("alloc inode idx = %d, type = %u, major = %u, minor = %u\n", i, type, major, minor);
+            printk(" %p alloc inode idx = %d, type = %u, major = %u, minor = %u\n", ip, i, type, major, minor);
 #endif
             return ip;
         }
@@ -186,6 +186,7 @@ static int tinyfs_meta_writei(struct superblock *superb, struct inode *ip)
     struct tinyfs_superblock *this;
     int i;
 
+
     this = (struct tinyfs_superblock *)superb;
     tip = (struct tinyfs_inode *)ip;
     dev = get_block_dev(ip->dev);
@@ -202,7 +203,6 @@ static int tinyfs_meta_writei(struct superblock *superb, struct inode *ip)
         id->addr[i] = tip->addr[i];
 
     bio_write(dev, buf);
-
     return 0;
 }
 
@@ -294,7 +294,7 @@ static int tinyfs_data_writei(struct superblock *superb, struct inode *ip, u8 *s
     return sum;
 }
 
-static int tinyfs_data_linki(struct superblock *superb, struct inode *dst, struct inode *src, const char *dname, int size)
+static int tinyfs_data_linki(struct superblock *superb, struct inode *dst, struct inode *src, const char *dentry_name, int size)
 {
     u32 off;
     struct tinyfs_dirent_disk de;
@@ -312,7 +312,7 @@ static int tinyfs_data_linki(struct superblock *superb, struct inode *dst, struc
     if (off >= dst->size)
         dst->size += sizeof(de);
 
-    strncpy(de.name, dname, sizeof(de.name));
+    strncpy(de.name, dentry_name, sizeof(de.name));
     de.idx = src->idx;
     tinyfs_data_writei(superb, dst, (uint8_t *)&de, off, sizeof(de));
 
